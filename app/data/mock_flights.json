@@ -1,0 +1,46 @@
+[
+  {
+    "id": "fl_101",
+    "airline": "Air India",
+    "flight_number": "AI-412",
+    "origin": "New Delhi (DEL)",
+    "destination": "Jaipur (JAI)",
+    "price": 65.0,
+    "currency": "USD",
+    "duration_minutes": 55,
+    "direct": true
+  },
+  {
+    "id": "fl_102",
+    "airline": "IndiGo",
+    "flight_number": "6E-204",
+    "origin": "Mumbai (BOM)",
+    "destination": "Jaipur (JAI)",
+    "price": 85.0,
+    "currency": "USD",
+    "duration_minutes": 110,
+    "direct": true
+  },
+  {
+    "id": "fl_103",
+    "airline": "Japan Airlines",
+    "flight_number": "JL-740",
+    "origin": "San Francisco (SFO)",
+    "destination": "Tokyo Narita (NRT)",
+    "price": 850.0,
+    "currency": "USD",
+    "duration_minutes": 660,
+    "direct": true
+  },
+  {
+    "id": "fl_104",
+    "airline": "Air France",
+    "flight_number": "AF-083",
+    "origin": "New York (JFK)",
+    "destination": "Paris Charles de Gaulle (CDG)",
+    "price": 720.0,
+    "currency": "USD",
+    "duration_minutes": 440,
+    "direct": true
+  }
+]

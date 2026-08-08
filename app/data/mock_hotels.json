@@ -1,0 +1,227 @@
+[
+  {
+    "city": "Jaipur",
+    "name": "The Grand Heritage Resort",
+    "star_rating": 4.8,
+    "price_per_night_usd": 150.0,
+    "location_lat": 26.9268,
+    "location_lon": 75.8242,
+    "amenities": ["Free WiFi", "Pool", "Spa", "Heritage Restaurant", "Butler Service"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Pink City Traveler Inn",
+    "star_rating": 4.1,
+    "price_per_night_usd": 35.0,
+    "location_lat": 26.9189,
+    "location_lon": 75.7885,
+    "amenities": ["Free WiFi", "AC", "Rooftop Café", "Laundry Service"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Rajputana Palace Sheraton",
+    "star_rating": 4.9,
+    "price_per_night_usd": 220.0,
+    "location_lat": 26.9175,
+    "location_lon": 75.7942,
+    "amenities": ["Free WiFi", "Swimming Pool", "Fitness Center", "Spa & Wellness", "Bar & Lounge"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Malviya Nagar Cozy Homestay",
+    "star_rating": 4.3,
+    "price_per_night_usd": 40.0,
+    "location_lat": 26.8545,
+    "location_lon": 75.8090,
+    "amenities": ["Free WiFi", "Kitchenette", "Garden View", "Air Conditioning"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Bani Park Heritage Haveli",
+    "star_rating": 4.6,
+    "price_per_night_usd": 85.0,
+    "location_lat": 26.9285,
+    "location_lon": 75.7972,
+    "amenities": ["Free WiFi", "Heritage Courtyard", "Rooftop Pool", "Restaurant", "Airport Shuttle"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Airport Business Hotel",
+    "star_rating": 4.2,
+    "price_per_night_usd": 60.0,
+    "location_lat": 26.8305,
+    "location_lon": 75.8072,
+    "amenities": ["Free WiFi", "Conference Room", "Gym", "Free Airport Transfer"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Hawa Mahal View Guest House",
+    "star_rating": 4.0,
+    "price_per_night_usd": 28.0,
+    "location_lat": 26.9245,
+    "location_lon": 75.8275,
+    "amenities": ["Free WiFi", "Rooftop Terrace", "Bicycle Rental"]
+  },
+  {
+    "city": "Jaipur",
+    "name": "Royal Mansarovar Palace",
+    "star_rating": 4.4,
+    "price_per_night_usd": 75.0,
+    "location_lat": 26.8640,
+    "location_lon": 75.7565,
+    "amenities": ["Free WiFi", "AC", "Flat-screen TV", "On-site Parking"]
+  },
+  {
+    "city": "Tokyo",
+    "name": "Tokyo Garden Boutique Hotel",
+    "star_rating": 4.8,
+    "price_per_night_usd": 160.0,
+    "location_lat": 35.6895,
+    "location_lon": 139.6917,
+    "amenities": ["Free WiFi", "Garden View", "Subway Access", "Onsen"]
+  },
+  {
+    "city": "Paris",
+    "name": "Parisian Opera Stay",
+    "star_rating": 4.5,
+    "price_per_night_usd": 180.0,
+    "location_lat": 48.8720,
+    "location_lon": 2.3320,
+    "amenities": ["Free WiFi", "City Center", "Breakfast Included"]
+  },
+  {
+    "city": "Paris",
+    "name": "Hotel Le Marais Chic",
+    "star_rating": 4.7,
+    "price_per_night_usd": 190.0,
+    "location_lat": 48.8575,
+    "location_lon": 2.3610,
+    "amenities": ["Free WiFi", "Boutique Decor", "Courtyard Garden", "Air Conditioning"]
+  },
+  {
+    "city": "Paris",
+    "name": "Montmartre Vista Hostel",
+    "star_rating": 4.2,
+    "price_per_night_usd": 45.0,
+    "location_lat": 48.8867,
+    "location_lon": 2.3431,
+    "amenities": ["Free WiFi", "Shared Kitchen", "Rooftop Terrace", "Luggage Storage"]
+  },
+  {
+    "city": "Paris",
+    "name": "L'Hôtel Saint-Germain",
+    "star_rating": 4.9,
+    "price_per_night_usd": 350.0,
+    "location_lat": 48.8540,
+    "location_lon": 2.3330,
+    "amenities": ["Free WiFi", "Pool", "Spa & Hamam", "Michelin Restaurant", "Concierge"]
+  },
+  {
+    "city": "Paris",
+    "name": "Champs-Élysées Palace",
+    "star_rating": 4.8,
+    "price_per_night_usd": 480.0,
+    "location_lat": 48.8715,
+    "location_lon": 2.3015,
+    "amenities": ["Free WiFi", "Gym", "Private Balcony", "Valet Parking", "Bar & Lounge"]
+  },
+  {
+    "city": "Paris",
+    "name": "CDG Airport Transit Hotel",
+    "star_rating": 4.0,
+    "price_per_night_usd": 75.0,
+    "location_lat": 49.0097,
+    "location_lon": 2.5479,
+    "amenities": ["Free WiFi", "Soundproof Rooms", "Airport Shuttle", "24h Front Desk"]
+  },
+  {
+    "city": "Paris",
+    "name": "Canal Saint-Martin Guest House",
+    "star_rating": 4.1,
+    "price_per_night_usd": 65.0,
+    "location_lat": 48.8760,
+    "location_lon": 2.3685,
+    "amenities": ["Free WiFi", "Bicycle Rental", "Laundry Facility"]
+  },
+  {
+    "city": "Paris",
+    "name": "Latin Quarter Cozy Stay",
+    "star_rating": 4.4,
+    "price_per_night_usd": 130.0,
+    "location_lat": 48.8485,
+    "location_lon": 2.3450,
+    "amenities": ["Free WiFi", "Air Conditioning", "Library Room"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Sukhumvit Grande Suite",
+    "star_rating": 4.7,
+    "price_per_night_usd": 140.0,
+    "location_lat": 13.7367,
+    "location_lon": 100.5600,
+    "amenities": ["Free WiFi", "Infinity Pool", "Rooftop Bar", "Spa", "Skytrain Access"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Silom Cozy Budget Inn",
+    "star_rating": 4.2,
+    "price_per_night_usd": 25.0,
+    "location_lat": 13.7250,
+    "location_lon": 100.5280,
+    "amenities": ["Free WiFi", "AC", "Laundry Service", "Near MRT"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Khao San Backpackers Hub",
+    "star_rating": 4.0,
+    "price_per_night_usd": 15.0,
+    "location_lat": 13.7590,
+    "location_lon": 100.4975,
+    "amenities": ["Free WiFi", "AC", "Rooftop Terrace", "Bar & Social Lounge"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Yaowarat Heritage Boutique",
+    "star_rating": 4.5,
+    "price_per_night_usd": 55.0,
+    "location_lat": 13.7415,
+    "location_lon": 100.5085,
+    "amenities": ["Free WiFi", "Vintage Design", "Tea House", "City View"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Suvarnabhumi Airport Link Hotel",
+    "star_rating": 4.1,
+    "price_per_night_usd": 45.0,
+    "location_lat": 13.6890,
+    "location_lon": 100.7500,
+    "amenities": ["Free WiFi", "Free Airport Transfer", "Gym", "24h Coffee Shop"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Chao Phraya Riverside Luxury",
+    "star_rating": 4.9,
+    "price_per_night_usd": 220.0,
+    "location_lat": 13.7230,
+    "location_lon": 100.5135,
+    "amenities": ["Free WiFi", "Riverside View", "Spa & Massages", "Outdoor Pool", "Fine Dining Restaurant"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Siam Shopping Center Stay",
+    "star_rating": 4.6,
+    "price_per_night_usd": 80.0,
+    "location_lat": 13.7460,
+    "location_lon": 100.5340,
+    "amenities": ["Free WiFi", "AC", "Fitness Center", "Breakfast Buffet"]
+  },
+  {
+    "city": "Bangkok",
+    "name": "Pratunam Market Hostel",
+    "star_rating": 4.1,
+    "price_per_night_usd": 20.0,
+    "location_lat": 13.7535,
+    "location_lon": 100.5405,
+    "amenities": ["Free WiFi", "AC", "City Map Access", "Locker Storage"]
+  }
+]

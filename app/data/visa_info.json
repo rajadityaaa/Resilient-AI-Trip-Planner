@@ -1,0 +1,23 @@
+{
+  "India": {
+    "visa_type": "e-Visa / Visa on Arrival for eligible nationalities",
+    "processing_days": 3,
+    "general_safety_level": "Moderate",
+    "advisory": "Keep passport copy handy and use authorized cabs.",
+    "emergency_number": "112"
+  },
+  "Japan": {
+    "visa_type": "eVisa / Visa-free entry for up to 90 days for select passports",
+    "processing_days": 5,
+    "general_safety_level": "Very High",
+    "advisory": "Carry cash as smaller shops may not accept international credit cards.",
+    "emergency_number": "110"
+  },
+  "France": {
+    "visa_type": "Schengen Visa required for non-EU passports",
+    "processing_days": 15,
+    "general_safety_level": "High",
+    "advisory": "Beware of pickpockets in crowded tourist spots.",
+    "emergency_number": "112"
+  }
+}
