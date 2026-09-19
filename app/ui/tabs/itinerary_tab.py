@@ -6,6 +6,7 @@ import streamlit as st
 from app.agents.state import TripState
 from app.tools.pdf_tools import export_itinerary_pdf
 from app.tools.booking_links import build_hotel_booking_link, build_flight_booking_link
+from app.ui.theme import render_timeline_html
 
 
 def render_itinerary_tab(trip_result: TripState):
@@ -85,29 +86,5 @@ def render_itinerary_tab(trip_result: TripState):
                 
     st.write("---")
 
-    # Display each day as an expander
-    circle_numbers = {1: "❶", 2: "❷", 3: "❸", 4: "❹", 5: "❺", 6: "❻", 7: "❼", 8: "❽", 9: "❾", 10: "❿"}
-    for day in itinerary:
-        day_num = day.get("day", "?")
-        day_date = day.get("date", "?")
-        
-        try:
-            badge = circle_numbers.get(int(day_num), "🗓️")
-        except ValueError:
-            badge = "🗓️"
-            
-        expander_title = f"{badge} Day {day_num} — {day_date}"
-
-        with st.expander(expander_title, expanded=(day_num == 1)):
-            st.markdown('<div class="itinerary-section-header">🌅 Morning</div>', unsafe_allow_html=True)
-            st.write(day.get("morning", "Free time/exploring."))
-
-            st.markdown('<div class="itinerary-section-header">☀️ Afternoon</div>', unsafe_allow_html=True)
-            st.write(day.get("afternoon", "Free time/exploring."))
-
-            st.markdown('<div class="itinerary-section-header">🌌 Evening</div>', unsafe_allow_html=True)
-            st.write(day.get("evening", "Leisure / return to hotel."))
-
-            notes = day.get("notes", "")
-            if notes:
-                st.info(f"💡 **Day {day_num} Notes & Reminders:**\n{notes}")
+    # ── Day-by-day timeline ──
+    st.markdown(render_timeline_html(itinerary), unsafe_allow_html=True)

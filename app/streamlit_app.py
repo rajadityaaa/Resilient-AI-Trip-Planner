@@ -11,7 +11,7 @@ import traceback
 import streamlit as st
 from app.agents.coordinator import plan_trip
 from app.ui.sidebar import render_sidebar
-from app.ui.theme import get_custom_css
+from app.ui.theme import get_custom_css, render_hero_section, render_footer_html
 from app.ui.tabs.overview_tab import render_overview_tab
 from app.ui.tabs.itinerary_tab import render_itinerary_tab
 from app.ui.tabs.budget_tab import render_budget_tab
@@ -204,8 +204,11 @@ def main():
         with tab_chat:
             render_chat_tab(trip_result)
     else:
-        # Prompt to configure trip
-        st.info("👈 Please configure your trip details in the sidebar and click **'Plan Trip'** to generate your plan.")
+        # Landing hero screen — shown before any trip has been planned
+        st.markdown(render_hero_section(), unsafe_allow_html=True)
+
+    # Footer — always visible
+    st.markdown(render_footer_html(), unsafe_allow_html=True)
 
 
 if __name__ == "__main__":

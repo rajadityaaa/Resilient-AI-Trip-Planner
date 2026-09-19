@@ -4,6 +4,7 @@ Displays trip title, overview, key stats, and user-friendly warnings for any err
 """
 import streamlit as st
 from app.agents.state import TripState
+from app.ui.theme import render_stat_card_html
 
 
 def render_overview_tab(trip_result: TripState):
@@ -32,44 +33,44 @@ def render_overview_tab(trip_result: TripState):
 
     with col1:
         st.markdown(
-            f"""
-            <div class="overview-card">
-                <div class="overview-card-label">📍 Destination</div>
-                <div class="overview-card-value">{trip_result.get("destination", "Unknown")}</div>
-            </div>
-            """,
+            render_stat_card_html(
+                label="Destination",
+                value=trip_result.get("destination", "Unknown"),
+                icon="📍",
+                accent_color="#F59E0B"
+            ),
             unsafe_allow_html=True
         )
     with col2:
         dates_str = f"{trip_result.get('start_date', '?')} to {trip_result.get('end_date', '?')}"
         st.markdown(
-            f"""
-            <div class="overview-card">
-                <div class="overview-card-label">📅 Dates</div>
-                <div class="overview-card-value" style="font-size: 1.05rem;">{dates_str}</div>
-            </div>
-            """,
+            render_stat_card_html(
+                label="Dates",
+                value=dates_str,
+                icon="📅",
+                accent_color="#38BDF8"
+            ),
             unsafe_allow_html=True
         )
     with col3:
         st.markdown(
-            f"""
-            <div class="overview-card">
-                <div class="overview-card-label">👥 Travelers</div>
-                <div class="overview-card-value">{trip_result.get('travelers', 1)} people</div>
-            </div>
-            """,
+            render_stat_card_html(
+                label="Travelers",
+                value=f"{trip_result.get('travelers', 1)} people",
+                icon="👥",
+                accent_color="#10B981"
+            ),
             unsafe_allow_html=True
         )
     with col4:
         budget_str = f"{trip_result.get('budget_total', 0.0):,.2f} {trip_result.get('budget_currency', 'USD')}"
         st.markdown(
-            f"""
-            <div class="overview-card">
-                <div class="overview-card-label">💰 Total Budget</div>
-                <div class="overview-card-value">{budget_str}</div>
-            </div>
-            """,
+            render_stat_card_html(
+                label="Total Budget",
+                value=budget_str,
+                icon="💰",
+                accent_color="#8B5CF6"
+            ),
             unsafe_allow_html=True
         )
 
