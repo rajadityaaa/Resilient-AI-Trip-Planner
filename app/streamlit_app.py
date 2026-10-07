@@ -35,50 +35,52 @@ def run_async(coro):
     return loop.run_until_complete(coro)
 
 
+def _render_progress_html(snap: dict, elapsed: float) -> str:
+    from app.agents.progress import STAGES
+    icons = {"pending": "⚪", "running": "⏳", "done": "✅", "warn": "⚠️", "failed": "⚠️"}
+    colors = {"pending": "#64748B", "running": "#F59E0B", "done": "#34D399", "warn": "#FBBF24", "failed": "#F87171"}
+    rows = []
+    done_count = 0
+    for key, label in STAGES:
+        info = snap.get(key, {"status": "pending", "detail": ""})
+        st_ = info["status"]
+        if st_ in ("done", "warn", "failed"):
+            done_count += 1
+        detail = f' <span style="color:#94A3B8;font-size:0.85rem;">- {info["detail"]}</span>' if info.get("detail") else ""
+        spinner = ('<span style="display:inline-block;border:2px solid rgba(245,158,11,0.2);border-top:2px solid #F59E0B;'
+                   'border-radius:50%;width:14px;height:14px;animation:spin 1s linear infinite;vertical-align:middle;"></span>'
+                   if st_ == "running" else icons[st_])
+        rows.append(f'<div style="padding:5px 0;color:{colors[st_]};font-family:Poppins,sans-serif;font-size:0.98rem;">'
+                    f'{spinner}&nbsp; {label}{detail}</div>')
+    pct = int(done_count / len(STAGES) * 100)
+    return f"""
+    <div style="background-color:#121824;border:1px solid rgba(245,158,11,0.2);padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+      <div style="display:flex;justify-content:space-between;color:#F8FAFC;font-weight:600;margin-bottom:10px;font-family:Poppins,sans-serif;">
+        <span>Building your trip plan...</span><span style="color:#F59E0B;">{elapsed:0.0f}s</span>
+      </div>
+      <div style="background:#1E293B;border-radius:6px;height:8px;margin-bottom:12px;overflow:hidden;">
+        <div style="background:#F59E0B;height:8px;width:{pct}%;transition:width 0.3s;"></div>
+      </div>
+      {''.join(rows)}
+    </div>
+    <style>@keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}</style>
+    """
+
+
 async def _plan_trip_with_status(state: dict):
     """
-    Animate status transition messages while plan_trip graph executes.
+    Show REAL live progress (which agent is running / finished and what it found)
+    while the plan_trip graph executes.
     """
-    messages = [
-        "🔍 Geocoding destination and finding travel suggestions...",
-        "🌦️ Querying live weather forecasts and historical climate data...",
-        "🏰 Fetching local attractions from OpenStreetMap...",
-        "🍜 Discovering highly-rated restaurants and local cuisine spots...",
-        "🏨 Matching available hotels and accommodations...",
-        "💰 Allocating per-category budget splits...",
-        "🚗 Compiling local transit guides and walkability tips...",
-        "🎒 Generating custom packing checklists...",
-        "💱 Fetching exchange rates and cash advice...",
-        "📝 Synthesizing final day-by-day itinerary summaries..."
-    ]
-    
+    from app.agents import progress
     status_placeholder = st.empty()
     task = asyncio.create_task(plan_trip(state))
-    
-    idx = 0
+
     while not task.done():
-        msg = messages[min(idx, len(messages) - 1)]
-        status_placeholder.markdown(
-            f"""
-            <div style="background-color: #121824; border: 1px solid rgba(245, 158, 11, 0.2); padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.35);">
-                <div style="display: flex; align-items: center;">
-                    <div style="border: 3px solid rgba(245, 158, 11, 0.1); border-radius: 50%; border-top: 3px solid #F59E0B; width: 24px; height: 24px; animation: spin 1s linear infinite; margin-right: 12px;"></div>
-                    <span style="font-family: 'Poppins', sans-serif; font-size: 1.05rem; font-weight: 500; color: #F8FAFC;">{msg}</span>
-                </div>
-            </div>
-            <style>
-            @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
-            </style>
-            """,
-            unsafe_allow_html=True
-        )
-        # Check task completion every 100ms for responsiveness
-        for _ in range(30):
-            if task.done():
-                break
-            await asyncio.sleep(0.1)
-        idx += 1
-        
+        snap, elapsed = progress.snapshot()
+        status_placeholder.markdown(_render_progress_html(snap, elapsed), unsafe_allow_html=True)
+        await asyncio.sleep(0.4)
+
     result = await task
     status_placeholder.empty()
     return result
