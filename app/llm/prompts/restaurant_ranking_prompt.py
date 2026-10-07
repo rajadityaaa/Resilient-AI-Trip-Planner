@@ -7,7 +7,10 @@ import json
 
 def build_restaurant_ranking_prompt(preferences: list[str], raw_restaurants: list[dict]) -> str:
     prefs_str = ", ".join(preferences) if preferences else "general dining"
-    places_json = json.dumps(raw_restaurants[:20], indent=2)
+    places_json = json.dumps(
+        [{"name": p.get("name"), "category": p.get("category"), "lat": round(p.get("lat", 0), 5), "lon": round(p.get("lon", 0), 5),
+           **({"cuisine": p["tags"]["cuisine"]} if p.get("tags", {}).get("cuisine") else {})} for p in raw_restaurants[:20]]
+    )
 
     return f"""You are a culinary travel expert.
 User Preferences & Dietary Needs: {prefs_str}

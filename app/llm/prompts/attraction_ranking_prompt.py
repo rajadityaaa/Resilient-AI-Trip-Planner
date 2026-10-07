@@ -7,7 +7,10 @@ import json
 
 def build_attraction_ranking_prompt(preferences: list[str], raw_attractions: list[dict]) -> str:
     prefs_str = ", ".join(preferences) if preferences else "general sightseeing"
-    places_json = json.dumps(raw_attractions[:20], indent=2)
+    places_json = json.dumps(
+        [{"name": p.get("name"), "category": p.get("category"), "lat": round(p.get("lat", 0), 5), "lon": round(p.get("lon", 0), 5),
+           **({"cuisine": p["tags"]["cuisine"]} if p.get("tags", {}).get("cuisine") else {})} for p in raw_attractions[:20]]
+    )
 
     return f"""You are a travel curation expert.
 User Preferences: {prefs_str}
