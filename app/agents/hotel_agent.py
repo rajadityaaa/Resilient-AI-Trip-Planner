@@ -11,7 +11,7 @@ and populate state["hotels"] with a list of dictionaries. Zero changes needed el
 import json
 from pathlib import Path
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
+from app.llm.factory import get_llm, clean_json_response, SMART_MODEL
 from app.llm.prompts.hotel_fallback_prompt import build_hotel_fallback_prompt
 
 MOCK_HOTELS_FILE = Path(__file__).parent.parent / "data" / "mock_hotels.json"
@@ -61,7 +61,7 @@ async def get_hotels(state: TripState) -> TripState:
 
     # Step 2: Fall back to LLM generation if city is not in mock dataset
     try:
-        llm = get_llm()
+        llm = get_llm(model=SMART_MODEL, max_tokens=2000)
         prompt = build_hotel_fallback_prompt(
             destination=dest,
             budget_total=state.get("budget_total", 1000.0),
@@ -73,19 +73,12 @@ async def get_hotels(state: TripState) -> TripState:
         try:
             generated = clean_json_response(resp_text)
         except json.JSONDecodeError:
-            # Retry once with stricter formatting instructions
-            retry_instruction = "\n\nCRITICAL: Respond with ONLY valid JSON, no trailing commas, no comments, and properly escaped quotes."
-            resp_text = llm(prompt + retry_instruction)
-            try:
-                generated = clean_json_response(resp_text)
-            except json.JSONDecodeError:
-                # Log a non-technical error and use fallback hotel list
-                state["errors"].append({
-                    "agent": "hotel_agent",
-                    "message": "hotel_agent: LLM response could not be parsed after retry, using fallback hotel data"
-                })
-                state["hotels"] = []
-                return state
+            state["errors"].append({
+                "agent": "hotel_agent",
+                "message": "hotel_agent: LLM response could not be parsed, using estimated hotel tiers"
+            })
+            state["hotels"] = _placeholder_hotels(state, dest)
+            return state
 
         if not isinstance(generated, list):
             generated = [generated]
@@ -99,4 +92,23 @@ async def get_hotels(state: TripState) -> TripState:
         state["errors"].append({"agent": "hotel_agent", "message": str(err)})
         state["hotels"] = []
 
+    if not state["hotels"]:
+        state["hotels"] = _placeholder_hotels(state, dest)
     return state
+
+
+def _placeholder_hotels(state: TripState, dest: str) -> list:
+    """Last resort so the section is never empty: price tiers derived from the user's budget."""
+    city = dest.split(",")[0].strip()
+    try:
+        from datetime import datetime
+        nights = max(1, (datetime.strptime(state["end_date"], "%Y-%m-%d") - datetime.strptime(state["start_date"], "%Y-%m-%d")).days)
+    except Exception:
+        nights = 4
+    per_night = max(20.0, float(state.get("budget_total", 1000.0)) * 0.40 / nights / max(1, -(-int(state.get("travelers", 1)) // 2)))
+    tiers = [("Budget stays", 0.6, 3.5), ("Mid-range hotels", 1.0, 4.0), ("Upscale hotels", 1.7, 4.5)]
+    return [{
+        "name": f"{label} in {city}", "city": city, "star_rating": stars,
+        "price_per_night_usd": round(per_night * mult, 2), "amenities": ["Check live availability on Booking.com"],
+        "is_mock": True, "source": "estimated_tier",
+    } for label, mult, stars in tiers]

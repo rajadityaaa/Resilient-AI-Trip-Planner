@@ -14,6 +14,51 @@ def _init_errors(state: TripState):
         state["errors"] = []
 
 
+def _nominatim_places(kind: str, geo: dict) -> list:
+    """Second real-data source (no LLM needed): Nominatim search inside a box around the city centre."""
+    from app.tools.geocode_tools import search_places_nearby
+    if kind == "attractions":
+        queries, delta = ["tourist attraction", "museum", "temple", "park"], 0.05
+    else:
+        queries, delta = ["restaurant", "cafe"], 0.025
+    out, seen = [], set()
+    for q in queries:
+        for it in search_places_nearby(q, geo["lat"], geo["lon"], delta=delta, limit=15):
+            key = it["name"].lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append({"name": it["name"], "category": (it.get("type") or q).replace("_", " ").capitalize(),
+                        "lat": it["lat"], "lon": it["lon"], "tags": {}})
+    return out[:20]
+
+
+def _ai_place_fallback(kind: str, dest: str, prefs: list, geo: dict) -> list:
+    """OSM returned nothing -> ask the LLM for well-known real places. Flagged as AI-suggested."""
+    from app.llm.prompts.place_fallback_prompt import build_place_fallback_prompt
+    from app.llm.factory import SMART_MODEL
+    llm = get_llm(model=SMART_MODEL, max_tokens=1800)
+    prompt = build_place_fallback_prompt(kind, dest, prefs, geo["lat"], geo["lon"])
+    items = clean_json_response(llm(prompt))
+    if isinstance(items, dict):
+        items = [items]
+    out, seen = [], set()
+    for it in items:
+        name = (it.get("name") or "").strip()
+        if not name or name.lower() in seen:
+            continue
+        seen.add(name.lower())
+        try:
+            lat, lon = float(it.get("lat")), float(it.get("lon"))
+            if abs(lat - geo["lat"]) > 0.5 or abs(lon - geo["lon"]) > 0.5:
+                raise ValueError
+        except Exception:
+            lat, lon = geo["lat"], geo["lon"]      # keep pin near the city centre if AI coords are off
+        out.append({"name": name, "category": it.get("category", kind.capitalize()), "lat": lat, "lon": lon,
+                    "match_reason": it.get("match_reason", ""), "source": "ai_suggested"})
+    return out[:10]
+
+
 async def get_restaurants_for_trip(state: TripState) -> TripState:
     """
     Fetch restaurants near destination, pass detected cuisine filter, and rank using LLM.
@@ -49,7 +94,14 @@ async def get_restaurants_for_trip(state: TripState) -> TripState:
             raw_restaurants = get_restaurants(geo["lat"], geo["lon"], radius_m=3000, cuisine=None, limit=20)
 
         if not raw_restaurants:
-            state["restaurants"] = []
+            raw_restaurants = _nominatim_places("restaurants", geo)
+
+        if not raw_restaurants:
+            try:
+                state["restaurants"] = _ai_place_fallback("restaurants", dest, prefs, geo)
+                state["errors"].append({"agent": "restaurant_agent", "message": "restaurant_agent: OpenStreetMap had no data; AI-suggested dining spots used"})
+            except Exception:
+                state["restaurants"] = []
             return state
 
         # Use LLM to rank and match restaurants
