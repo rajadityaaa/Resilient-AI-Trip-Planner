@@ -65,6 +65,10 @@ async def get_hotels(state: TripState) -> TripState:
             for h in provider_hotels:
                 if "price_source" not in h:
                     h["price_source"] = "estimated"
+                if "star_rating" not in h:
+                    h["star_rating"] = h.get("rating", 4.0)
+                if "price_per_night_usd" not in h:
+                    h["price_per_night_usd"] = 85.0
             state["hotels"] = provider_hotels
             return state
     except Exception as err:

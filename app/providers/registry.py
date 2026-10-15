@@ -170,6 +170,11 @@ def search_places(
     # ── 3. Nominatim search ───────────────────────────────────────────────────
     nom_results = _search_nominatim(kind, lat, lon, query, limit)
     if nom_results:
+        if kind == "hotels":
+            nom_results = [
+                estimate_hotel_pricing(h, budget_total=budget_total)
+                for h in nom_results
+            ]
         cache_set(cache_key, nom_results, ttl_seconds=86400)
         return nom_results, "nominatim"
 
