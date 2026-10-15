@@ -153,9 +153,18 @@ def main():
     # Render sidebar inputs
     form_inputs = render_sidebar()
 
-    # If sidebar is submitted, execute the plan
+    # If sidebar is submitted, execute the plan (with cooldown protection)
     if form_inputs:
-        execute_plan_trip(form_inputs)
+        import time
+        cooldown_s = 5.0
+        now = time.time()
+        last_submit = st.session_state.get("last_plan_submit_time", 0.0)
+        if now - last_submit < cooldown_s:
+            wait_rem = int(cooldown_s - (now - last_submit)) + 1
+            st.sidebar.warning(f"Please wait {wait_rem}s before planning another trip.")
+        else:
+            st.session_state["last_plan_submit_time"] = now
+            execute_plan_trip(form_inputs)
 
     # Initialize trip state cache if not present
     if "trip_result" not in st.session_state:

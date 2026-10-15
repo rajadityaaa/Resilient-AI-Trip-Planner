@@ -32,7 +32,8 @@ _INITIALIZED_PATHS: set[str] = set()
 
 def _db_path() -> Path:
     """Resolve the DB file path, creating the parent directory if needed."""
-    raw = os.getenv("DATABASE_URL", "data/travel.db")
+    from app.config import get_settings
+    raw = os.getenv("DATABASE_URL") or get_settings().DATABASE_URL
     if raw.startswith("sqlite:///"):
         raw = raw[len("sqlite:///"):]
     p = Path(raw)
@@ -257,6 +258,14 @@ def delete_trip(trip_id: str) -> bool:
         cur = conn.execute("DELETE FROM trips WHERE id = ?", (trip_id,))
         conn.commit()
         return cur.rowcount > 0
+
+
+def get_daily_trip_count(window_seconds: float = 86400) -> int:
+    """Return count of trip plans submitted within the last window_seconds (default 24h)."""
+    cutoff = time.time() - window_seconds
+    with _connect() as conn:
+        row = conn.execute("SELECT COUNT(*) FROM trips WHERE created_at >= ?", (cutoff,)).fetchone()
+        return row[0] if row else 0
 
 
 def recover_stale_jobs() -> int:

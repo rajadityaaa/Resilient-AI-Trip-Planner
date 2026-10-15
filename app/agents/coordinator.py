@@ -36,7 +36,9 @@ from app.agents.progress import ProgressTracker, current_tracker
 # so asyncio.gather alone would NOT overlap them. We run each agent in its own worker
 # thread (with its own event loop) so network + LLM waits genuinely overlap.
 
-AGENT_TIMEOUT_S = 48          # hard cap per agent so one slow API can't stall the whole run
+from app.config import get_settings
+
+AGENT_TIMEOUT_S = get_settings().AGENT_TIMEOUT_S          # hard cap per agent so one slow API can't stall the whole run
 _OUTPUT_KEYS = {
     "weather": get_weather,
     "attractions": get_attractions_for_trip,

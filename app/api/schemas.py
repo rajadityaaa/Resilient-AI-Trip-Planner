@@ -8,6 +8,7 @@ from datetime import date
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
+from app.security.sanitize import sanitize_text, sanitize_preferences
 
 
 TRIP_TYPES = Literal["leisure", "business", "adventure", "family", "solo", "romantic"]
@@ -53,6 +54,22 @@ class PlanRequest(BaseModel):
             raise ValueError("budget_currency must be exactly 3 uppercase letters (ISO 4217).")
         return s
 
+    @field_validator("origin", mode="before")
+    @classmethod
+    def _sanitize_origin(cls, v: Any) -> str:
+        cleaned = sanitize_text(str(v), max_length=200)
+        if not cleaned:
+            raise ValueError("origin must not be empty.")
+        return cleaned
+
+    @field_validator("destination", mode="before")
+    @classmethod
+    def _sanitize_destination(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        cleaned = sanitize_text(str(v), max_length=200)
+        return cleaned if cleaned else None
+
     @field_validator("preferences", mode="before")
     @classmethod
     def _validate_preferences(cls, v: Any) -> list[str]:
@@ -65,7 +82,7 @@ class PlanRequest(BaseModel):
                 raise ValueError("Each preference must be a string.")
             if len(item) > 50:
                 raise ValueError(f"Preference '{item[:20]}…' exceeds 50 characters.")
-        return v
+        return sanitize_preferences(v, max_items=10, max_item_len=50)
 
     @model_validator(mode="after")
     def _validate_date_range(self) -> "PlanRequest":

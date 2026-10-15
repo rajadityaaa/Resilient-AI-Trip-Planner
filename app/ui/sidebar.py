@@ -140,7 +140,9 @@ def render_sidebar() -> Optional[dict]:
                 st.sidebar.error(err)
             return None
 
-        # ── Merge Preferences ──
+        # ── Merge & Sanitize Preferences ──
+        from app.security.sanitize import sanitize_text, sanitize_preferences
+
         all_preferences = list(selected_prefs)
         if custom_prefs_input.strip():
             custom_list = [p.strip().lower() for p in custom_prefs_input.split(",") if p.strip()]
@@ -148,16 +150,20 @@ def render_sidebar() -> Optional[dict]:
                 if cp not in all_preferences:
                     all_preferences.append(cp)
 
+        clean_origin = sanitize_text(origin, max_length=100)
+        clean_dest = sanitize_text(destination, max_length=100) if destination and destination.strip() else None
+        clean_prefs = sanitize_preferences(all_preferences, max_items=10, max_item_len=50)
+
         return {
-            "origin": origin.strip(),
-            "destination": destination.strip() if destination.strip() else None,
+            "origin": clean_origin,
+            "destination": clean_dest,
             "start_date": start_date,
             "end_date": end_date,
             "travelers": int(travelers),
             "budget_total": float(budget_total),
             "budget_currency": budget_currency,
             "trip_type": trip_type,
-            "preferences": all_preferences,
+            "preferences": clean_prefs,
         }
 
     return None

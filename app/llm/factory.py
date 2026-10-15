@@ -13,10 +13,9 @@ except ImportError:
     pass
 
 
-logger = logging.getLogger(__name__)
+from app.config import get_settings
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+logger = logging.getLogger(__name__)
 
 # Groq retired llama-3.1-8b-instant and llama-3.3-70b-versatile on 2026-08-16 (they now return 404).
 # Replacements recommended by Groq: openai/gpt-oss-20b (fast) and openai/gpt-oss-120b / qwen3.6-27b (smart).
@@ -66,11 +65,9 @@ def _strip_think(text: str) -> str:
     return re.sub(r"<think>[\s\S]*?</think>", "", text or "").strip()
 
 
-# ── Reliability controls ────────────────────────────────────────────────────
-# Agents run in parallel; without a limiter they all hit Groq in the same second and get 429s.
-# At most LLM_MAX_CONCURRENT calls are in flight; the rest wait their turn (usually < 2s).
-LLM_MAX_CONCURRENT = 3
-LLM_DEADLINE_S = 22          # one generate() call never takes longer than this (all providers combined)
+# Reliability controls
+LLM_MAX_CONCURRENT = get_settings().LLM_MAX_CONCURRENT
+LLM_DEADLINE_S = get_settings().LLM_DEADLINE_S
 _llm_slots = threading.Semaphore(LLM_MAX_CONCURRENT)
 
 
@@ -83,7 +80,9 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
     - 429: honours a short Retry-After and retries the same model once, otherwise next model.
     - Never exceeds `deadline` (absolute time.time() value).
     """
-    api_key = os.getenv("GROQ_API_KEY", "")
+    settings = get_settings()
+    env_key = os.getenv("GROQ_API_KEY")
+    api_key = env_key if env_key is not None else settings.GROQ_API_KEY.get_secret_value()
     if api_key == "invalid":
         raise ValueError("Simulated API Key failure.")
     if not api_key:
@@ -164,7 +163,9 @@ def _call_openrouter(prompt: str, system_instruction: Optional[str] = None,
                      model_name: str = "openrouter/free", max_tokens: int = 2048,
                      timeout: float = 25) -> str:
     """Call OpenRouter (fallback provider)."""
-    api_key = os.getenv("OPENROUTER_API_KEY", "")
+    settings = get_settings()
+    env_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = env_key if env_key is not None else settings.OPENROUTER_API_KEY.get_secret_value()
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY environment variable is not set.")
 
@@ -236,7 +237,6 @@ def clean_json_response(text: str) -> Any:
         cleaned = match.group(1).strip()
     else:
         m_arr = re.search(r"(\[[\s\S]*\]|\{[\s\S]*\})", cleaned)
-        if m_arr:
-            cleaned = m_arr.group(1).strip()
-
-    return json.loads(cleaned)
+    parsed = json.loads(cleaned)
+    from app.security.sanitize import clip_strings
+    return clip_strings(parsed, max_len=2000)

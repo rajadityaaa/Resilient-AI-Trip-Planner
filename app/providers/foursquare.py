@@ -77,20 +77,30 @@ def reset_daily_calls() -> None:
     cache_set(f"budget:foursquare:{today_str}", 0, ttl_seconds=86400 * 2)
 
 
+def _foursquare_key() -> str:
+    from app.config import get_settings
+    env_val = os.getenv("FOURSQUARE_API_KEY")
+    if env_val is not None:
+        return env_val.strip()
+    return get_settings().FOURSQUARE_API_KEY.get_secret_value().strip()
+
+
 # ── Provider Implementation ───────────────────────────────────────────────────
 
 class FoursquarePlacesProvider:
     name: str = "foursquare"
 
     def __init__(self, api_key: Optional[str] = None) -> None:
-        self.api_key = api_key or os.getenv("FOURSQUARE_API_KEY", "").strip()
+        self.api_key = api_key
+
+    def _get_api_key(self) -> str:
+        if self.api_key is not None:
+            return self.api_key.strip()
+        return _foursquare_key()
 
     def is_configured(self) -> bool:
         """Return True if an API key is present."""
-        return bool(self.api_key or os.getenv("FOURSQUARE_API_KEY", "").strip())
-
-    def _get_api_key(self) -> str:
-        return self.api_key or os.getenv("FOURSQUARE_API_KEY", "").strip()
+        return bool(self._get_api_key())
 
     def search(
         self,
