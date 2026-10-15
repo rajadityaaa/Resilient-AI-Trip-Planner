@@ -122,3 +122,6 @@ def render_map_tab(trip_result: TripState):
         st.markdown(f"- 🏰 Attractions: **{len(attractions)}**")
         st.markdown(f"- 🍴 Restaurants: **{len(restaurants)}**")
         st.markdown(f"- 🏨 Hotels: **{len(hotels)}**")
+
+    st.write("---")
+    st.caption("Data sources: Foursquare, OpenStreetMap contributors. Hotel prices are estimates; check live prices via the booking buttons.")
