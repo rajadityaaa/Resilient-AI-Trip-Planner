@@ -11,6 +11,8 @@ Each agent runs in its own worker thread with a hard timeout, so one slow API ca
 no longer stall the whole run. summary_node ALWAYS runs, even if agents logged errors.
 """
 import asyncio
+import contextvars
+from typing import Optional
 from langgraph.graph import StateGraph, START, END
 
 from app.agents.state import TripState
@@ -26,6 +28,7 @@ from app.agents.currency_agent import build_currency_info
 from app.agents.summary_agent import build_summary
 from app.tools.geocode_tools import geocode_place
 from app.agents import progress
+from app.agents.progress import ProgressTracker, current_tracker
 
 
 # ── Parallel execution helpers ──────────────────────────────────────────────
@@ -169,12 +172,22 @@ def build_coordinator_graph() -> StateGraph:
 
 # ── Public API ──────────────────────────────────────────────────────────────
 
-async def plan_trip(initial_state: TripState) -> TripState:
+async def plan_trip(
+    initial_state: TripState,
+    progress_tracker: Optional[ProgressTracker] = None,
+) -> TripState:
     """
     Run the full trip planner pipeline.
 
     Args:
-        initial_state: A TripState dict with user inputs populated.
+        initial_state:     A TripState dict with user inputs populated.
+        progress_tracker:  Optional per-job ProgressTracker.  When provided,
+                           it is bound to the ``current_tracker`` ContextVar so
+                           all agents in this call (including those running in
+                           worker threads via asyncio.to_thread, which copies
+                           the context) automatically write to this tracker.
+                           When omitted, the module-level default tracker is used
+                           (Streamlit path).
 
     Returns:
         TripState: The completed state dict with all agent outputs populated,
@@ -183,12 +196,24 @@ async def plan_trip(initial_state: TripState) -> TripState:
     # Ensure errors list is initialized
     if "errors" not in initial_state or initial_state["errors"] is None:
         initial_state["errors"] = []
-    progress.reset()
 
-    graph = build_coordinator_graph()
-    compiled = graph.compile()
+    # Bind the tracker to the current async context.
+    # asyncio.to_thread() copies the context, so worker threads see the same tracker.
+    if progress_tracker is not None:
+        token = current_tracker.set(progress_tracker)
+    else:
+        token = None
 
-    # LangGraph async invoke returns the final state
-    final_state = await compiled.ainvoke(initial_state)
+    try:
+        progress.reset()  # resets whichever tracker is active for this context
+
+        graph = build_coordinator_graph()
+        compiled = graph.compile()
+
+        # LangGraph async invoke returns the final state
+        final_state = await compiled.ainvoke(initial_state)
+    finally:
+        if token is not None:
+            current_tracker.reset(token)
 
     return final_state
