@@ -89,4 +89,4 @@ def render_itinerary_tab(trip_result: TripState):
     # ── Day-by-day timeline ──
     st.markdown(render_timeline_html(itinerary), unsafe_allow_html=True)
     st.write("---")
-    st.caption("Data sources: Foursquare, OpenStreetMap contributors")
+    st.caption("Data sources: Foursquare, OpenStreetMap contributors. Curated landmarks marked with [AI-suggested].")

@@ -105,6 +105,7 @@ def search_places(
     query: Optional[str] = None,
     destination: Optional[str] = None,
     budget_total: Optional[float] = None,
+    preferences: Optional[list] = None,
 ) -> tuple[list[dict], str]:
     """
     Search places following the ordered provider chain:
@@ -116,7 +117,8 @@ def search_places(
     Returns (places_list, winning_provider_name).
     Results are cached for 24h (or 10m for empty results).
     """
-    cache_key = f"places_chain:{kind}:{lat:.4f}:{lon:.4f}:{radius_m}:{limit}:{query or ''}"
+    pref_key = ",".join(sorted(preferences or []))
+    cache_key = f"places_chain:{kind}:{lat:.4f}:{lon:.4f}:{radius_m}:{limit}:{query or ''}:{pref_key}"
     cached = cache_get(cache_key)
     if cached is not None:
         source = cached[0].get("source", "cache") if cached else "negative_cache"
@@ -151,8 +153,16 @@ def search_places(
             from app.tools.places_tools import get_attractions
             osm_results = get_attractions(lat=lat, lon=lon, radius_m=radius_m, limit=limit)
             if osm_results:
-                cache_set(cache_key, osm_results, ttl_seconds=86400)
-                return osm_results, "osm"
+                wants_parks = any(k in p.lower() for p in (preferences or []) for k in ["park", "nature", "outdoor", "garden"])
+                if not wants_parks:
+                    osm_results = [
+                        r for r in osm_results
+                        if r.get("category", "").lower() not in ("park", "leisure_park")
+                        and "park" not in r.get("name", "").lower()
+                    ]
+                if osm_results:
+                    cache_set(cache_key, osm_results, ttl_seconds=86400)
+                    return osm_results, "osm"
         except Exception as exc:
             logger.warning(f"[ProviderRegistry] Overpass attractions failed: {exc}")
 
@@ -169,7 +179,7 @@ def search_places(
             logger.warning(f"[ProviderRegistry] Overpass restaurants failed: {exc}")
 
     # ── 3. Nominatim search ───────────────────────────────────────────────────
-    nom_results = _search_nominatim(kind, lat, lon, query, limit)
+    nom_results = _search_nominatim(kind, lat, lon, query, limit, preferences=preferences)
     if nom_results:
         if kind == "hotels":
             nom_results = [
@@ -192,11 +202,52 @@ def search_places(
 
 
 def _search_nominatim(
-    kind: KindType, lat: float, lon: float, query: Optional[str], limit: int
+    kind: KindType,
+    lat: float,
+    lon: float,
+    query: Optional[str],
+    limit: int,
+    preferences: Optional[list] = None,
 ) -> list[dict]:
     """Fallback search using Nominatim bounding box search."""
+    wants_parks = any(k in p.lower() for p in (preferences or []) for k in ["park", "nature", "outdoor", "garden"])
+
     if kind == "attractions":
-        queries, delta = ["tourist attraction", "museum", "temple", "park"], 0.05
+        queries = ["tourist attraction", "museum"]
+        delta = 0.05
+        # Map preference keywords to place types
+        pref_to_type = {
+            "temple": "temple",
+            "temples": "temple",
+            "museum": "museum",
+            "museums": "museum",
+            "market": "market",
+            "markets": "market",
+            "bazaar": "market",
+            "palace": "palace",
+            "palaces": "palace",
+            "monument": "monument",
+            "monuments": "monument",
+            "historic": "monument",
+            "history": "historic",
+            "gallery": "gallery",
+            "art": "gallery",
+            "church": "church",
+            "mosque": "mosque",
+            "viewpoint": "viewpoint",
+            "zoo": "zoo",
+            "aquarium": "aquarium",
+            "castle": "castle",
+            "beach": "beach",
+        }
+        for p in (preferences or []):
+            p_lower = p.lower()
+            for kw, ptype in pref_to_type.items():
+                if kw in p_lower and ptype not in queries:
+                    queries.append(ptype)
+        if wants_parks:
+            queries.append("park")
+
     elif kind == "restaurants":
         queries = ["restaurant", "cafe"]
         delta = 0.025
@@ -210,8 +261,12 @@ def _search_nominatim(
                 name = it.get("name", "").strip()
                 if not name or name.lower() in seen:
                     continue
-                seen.add(name.lower())
                 cat = (it.get("type") or q).replace("_", " ").capitalize()
+                # Exclude generic park results unless preferences explicitly mention parks/nature/outdoors
+                if kind == "attractions" and not wants_parks:
+                    if cat.lower() in ("park", "leisure_park") or "park" in name.lower() or it.get("type") == "park":
+                        continue
+                seen.add(name.lower())
                 out.append({
                     "name": name,
                     "category": cat,

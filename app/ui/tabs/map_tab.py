@@ -55,12 +55,14 @@ def render_map_tab(trip_result: TripState):
         lon = a.get("lon")
         name = a.get("name", "Attraction")
         cat = a.get("category", "Attraction")
+        is_ai = a.get("source") == "ai_suggested"
+        ai_badge = " <span style='font-size:0.75rem; background:#3B82F6; color:white; padding:1px 6px; border-radius:4px;'>AI-suggested</span>" if is_ai else ""
         if lat is not None and lon is not None:
-            popup_text = f"🏰 <b>{name}</b><br>Type: {cat}"
+            popup_text = f"🏰 <b>{name}</b>{ai_badge}<br>Type: {cat}"
             folium.Marker(
                 location=[float(lat), float(lon)],
                 popup=folium.Popup(popup_text, max_width=300),
-                tooltip=name,
+                tooltip=f"{name} (AI-suggested)" if is_ai else name,
                 icon=folium.Icon(color="blue", icon="info-sign")
             ).add_to(m)
 
@@ -119,9 +121,13 @@ def render_map_tab(trip_result: TripState):
         
         # Details list counts
         st.write("### 📈 Items Shown")
-        st.markdown(f"- 🏰 Attractions: **{len(attractions)}**")
+        ai_attr_count = sum(1 for a in attractions if a.get("source") == "ai_suggested")
+        attr_label = f"- 🏰 Attractions: **{len(attractions)}**"
+        if ai_attr_count > 0:
+            attr_label += f" *({ai_attr_count} AI-suggested)*"
+        st.markdown(attr_label)
         st.markdown(f"- 🍴 Restaurants: **{len(restaurants)}**")
         st.markdown(f"- 🏨 Hotels: **{len(hotels)}**")
 
     st.write("---")
-    st.caption("Data sources: Foursquare, OpenStreetMap contributors. Hotel prices are estimates; check live prices via the booking buttons.")
+    st.caption("Data sources: Foursquare, OpenStreetMap contributors. Curated landmarks marked with [AI-suggested]. Hotel prices are estimates; check live prices via the booking buttons.")

@@ -438,3 +438,85 @@ async def test_restaurant_agent_nominatim_retrieval_regression(monkeypatch):
             assert r.get("name"), "Restaurant missing name"
             assert r.get("lat") is not None and r.get("lon") is not None, "Missing coordinates"
 
+
+# ── 9. Attraction Quality & Deduplication Regression Test ─────────────────────
+
+@pytest.mark.asyncio
+async def test_attraction_agent_hybrid_quality_and_deduplication(monkeypatch):
+    """
+    Test attraction quality improvement:
+    1. AI landmarks are fetched and merged (source: 'ai_suggested').
+    2. Real provider results include place-type queries (e.g. 'temple' for 'temples').
+    3. Merged list has NO duplicates.
+    4. Contains AI landmarks (Grand Palace, Wat Pho, Wat Arun).
+    5. Contains at least one real 'temple' from Nominatim.
+    6. Excludes parks when preferences do not mention parks/nature/outdoors.
+    """
+    import json
+    from app.agents.attraction_agent import get_attractions_for_trip
+
+    monkeypatch.delenv("FOURSQUARE_API_KEY", raising=False)
+    trip_circuit("overpass", cooldown_s=300)
+
+    ai_landmarks = json.dumps([
+        {"name": "The Grand Palace", "category": "Palace", "lat": 13.7500, "lon": 100.4915, "match_reason": "Famous palace"},
+        {"name": "Wat Pho", "category": "Temple", "lat": 13.7465, "lon": 100.4933, "match_reason": "Reclining Buddha"},
+        {"name": "Wat Arun", "category": "Temple", "lat": 13.7437, "lon": 100.4889, "match_reason": "Temple of Dawn"},
+        {"name": "Wat Phra Chetuphon (Wat Pho)", "category": "Temple", "lat": 13.7466, "lon": 100.4934, "match_reason": "Duplicate test"},
+    ])
+
+    def fake_search_nearby(query, lat, lon, delta=0.04, limit=20):
+        if query == "temple":
+            return [
+                {"name": "Wat Saket", "lat": 13.7538, "lon": 100.5066, "type": "temple"},
+                {"name": "Wat Traimit", "lat": 13.7378, "lon": 100.5136, "type": "temple"},
+            ]
+        elif query == "park":
+            return [
+                {"name": "Lumpini Park", "lat": 13.7314, "lon": 100.5417, "type": "park"},
+                {"name": "Benjakitti Park", "lat": 13.7289, "lon": 100.5583, "type": "park"},
+            ]
+        elif query in ("tourist attraction", "museum"):
+            return [
+                {"name": "Museum of Siam", "lat": 13.7441, "lon": 100.4941, "type": "museum"},
+            ]
+        return []
+
+    with patch("app.agents.attraction_agent.geocode_place", return_value={"lat": 13.7563, "lon": 100.5018, "display_name": "Bangkok"}), \
+         patch("app.providers.registry.search_places_nearby", side_effect=fake_search_nearby), \
+         patch("app.tools.geocode_tools.search_places_nearby", side_effect=fake_search_nearby), \
+         patch("app.agents.attraction_agent.get_llm", return_value=lambda prompt: ai_landmarks):
+
+        state = {
+            "destination": "Bangkok",
+            "preferences": ["temples", "street food"],
+            "errors": []
+        }
+
+        t0 = time.time()
+        res = await get_attractions_for_trip(state)
+        elapsed = time.time() - t0
+
+        assert elapsed < 5.0, f"Expected < 5.0s, got {elapsed:.2f}s"
+        attractions = res.get("attractions", [])
+        assert len(attractions) > 0, "No attractions returned"
+
+        names = [a["name"].strip().lower() for a in attractions]
+        # 1. No duplicates
+        assert len(names) == len(set(names)), f"Duplicates found in attractions: {names}"
+
+        # 2. Contains AI landmarks
+        ai_names = [a["name"] for a in attractions if a.get("source") == "ai_suggested"]
+        assert any("grand palace" in n.lower() for n in ai_names), "Grand Palace missing from AI landmarks"
+        assert any("wat pho" in n.lower() for n in ai_names), "Wat Pho missing from AI landmarks"
+        assert any("wat arun" in n.lower() for n in ai_names), "Wat Arun missing from AI landmarks"
+
+        # 3. Contains at least one real temple from Nominatim
+        real_temples = [a["name"] for a in attractions if a.get("source") == "nominatim" and "temple" in (a.get("category", "") + a.get("name", "")).lower()]
+        assert len(real_temples) >= 1, f"Expected at least 1 real temple, got: {real_temples}"
+
+        # 4. Has NO park when preferences do not mention parks
+        parks = [a["name"] for a in attractions if "park" in a.get("name", "").lower() or a.get("category", "").lower() == "park"]
+        assert len(parks) == 0, f"Unexpected parks found in attractions: {parks}"
+
+
