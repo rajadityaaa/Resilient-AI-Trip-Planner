@@ -112,6 +112,29 @@ async def get_restaurants_for_trip(state: TripState) -> TripState:
                 state["restaurants"] = []
             return state
 
+        # Soft sort raw restaurants by user preferences/cuisine before LLM ranking
+        if prefs or cuisine_kw:
+            match_terms = [p.lower() for p in prefs]
+            if cuisine_kw and cuisine_kw.lower() not in match_terms:
+                match_terms.append(cuisine_kw.lower())
+
+            def _score_restaurant(r: dict) -> int:
+                score = 0
+                name = (r.get("name") or "").lower()
+                cat = (r.get("category") or "").lower()
+                tags = r.get("tags") or {}
+                cuisine_tag = str(tags.get("cuisine", "")).lower()
+                for term in match_terms:
+                    if term in name:
+                        score += 3
+                    if term in cuisine_tag:
+                        score += 3
+                    if term in cat:
+                        score += 2
+                return score
+
+            raw_restaurants.sort(key=_score_restaurant, reverse=True)
+
         # Index raw items by name to preserve provider metadata
         raw_by_name = {
             r["name"].strip().lower(): r for r in raw_restaurants if isinstance(r, dict) and r.get("name")
@@ -159,6 +182,17 @@ async def get_restaurants_for_trip(state: TripState) -> TripState:
                             "source": original.get("source", source),
                         }
                         deduped.append(merged)
+
+                # Backfill from raw_restaurants if LLM returned fewer than 10 items
+                if len(deduped) < 10 and len(raw_restaurants) > len(deduped):
+                    for r in raw_restaurants:
+                        rname = (r.get("name") or "").strip().lower()
+                        if rname and rname not in seen:
+                            seen.add(rname)
+                            deduped.append(r)
+                            if len(deduped) >= 10:
+                                break
+
                 state["restaurants"] = deduped[:10]
             else:
                 state["restaurants"] = raw_restaurants[:10]

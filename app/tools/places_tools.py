@@ -41,7 +41,7 @@ def _post_one(target: str, query: str, timeout: float) -> Optional[dict]:
 
 
 def _fetch_overpass_with_retry(
-    query: str, attempts: int = 1, url: str = OVERPASS_URL, timeout: float = 16
+    query: str, attempts: int = 1, url: str = OVERPASS_URL, timeout: float = 6
 ) -> Optional[dict]:
     """
     Race ALL Overpass mirrors at the same time; the first valid answer wins.
@@ -55,7 +55,7 @@ def _fetch_overpass_with_retry(
     pool = ThreadPoolExecutor(max_workers=len(OVERPASS_MIRRORS))
     futures = [pool.submit(_post_one, m, query, timeout) for m in OVERPASS_MIRRORS]
     try:
-        for fut in as_completed(futures, timeout=timeout + 2):
+        for fut in as_completed(futures, timeout=timeout + 1):
             res = fut.result()
             if res and "elements" in res:
                 record_success("overpass")
@@ -120,7 +120,7 @@ def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 1
 
     around = f"(around:{radius_m},{lat},{lon})"
     notable = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:6];
     (
       nwr["tourism"~"^(attraction|museum|gallery|viewpoint|zoo|theme_park)$"]["name"]["wikidata"]{around};
       nwr["historic"]["name"]["wikidata"]{around};
@@ -129,7 +129,7 @@ def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 1
     out center 80;
     """
     broad = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:6];
     (
       nwr["tourism"~"^(attraction|museum|gallery|viewpoint)$"]["name"]{around};
       nwr["historic"]["name"]{around};
@@ -179,7 +179,7 @@ def get_restaurants(
 
     around = f"(around:{radius_m},{lat},{lon})"
     notable = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:6];
     (
       nwr["amenity"="restaurant"]["name"]["cuisine"]{around};
       nwr["amenity"="cafe"]["name"]["cuisine"]{around};
@@ -187,7 +187,7 @@ def get_restaurants(
     out center 80;
     """
     broad = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:6];
     (
       nwr["amenity"="restaurant"]["name"]{around};
       nwr["amenity"="cafe"]["name"]{around};
@@ -203,7 +203,7 @@ def get_restaurants(
     if len(results) < 6 and not is_circuit_open("overpass"):
         data2 = _fetch_overpass_with_retry(broad, attempts=1)
         if data2 and "elements" in data2:
-            extra = _parse_elements(data2["elements"], limit, lambda tags: tags.get("amenity", "Restaurant").capitalize(), cuisine_norm)
+            extra = _parse_elements(data2["elements"], limit, lambda tags: tags.get("amenity", "Restaurant").capitalize(), None)
             have = {r["name"].lower() for r in results}
             results += [e for e in extra if e["name"].lower() not in have]
             results = results[:limit]

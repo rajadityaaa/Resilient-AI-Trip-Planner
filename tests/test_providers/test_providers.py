@@ -387,3 +387,54 @@ async def test_agents_return_complete_data_when_all_providers_fail(monkeypatch):
             r_res = await get_restaurants_for_trip(rest_state)
             assert len(r_res["restaurants"]) > 0
             assert r_res["restaurants"][0]["name"] == "Thip Samai Pad Thai"
+
+
+# ── 8. Regression Test: Nominatim Restaurant Retrieval ───────────────────────
+
+@pytest.mark.asyncio
+async def test_restaurant_agent_nominatim_retrieval_regression(monkeypatch):
+    """
+    Regression test: When Foursquare is disabled and Overpass breaker is open,
+    Nominatim mocked to return 5 restaurants for 'restaurant' and 5 for 'cafe'
+    (and 0 for 'street food') must return at least 8 restaurants with source 'nominatim'
+    in under 3.0 seconds (all HTTP and LLM calls mocked).
+    """
+    import json
+    monkeypatch.delenv("FOURSQUARE_API_KEY", raising=False)
+    trip_circuit("overpass", cooldown_s=300)
+
+    def fake_search_nearby(query, lat, lon, delta=0.04, limit=20):
+        if query == "street food":
+            return []
+        if query in ("restaurant", "cafe"):
+            return [{"name": f"{query}_{i}", "lat": lat, "lon": lon, "type": query} for i in range(5)]
+        return []
+
+    mock_llm_ranking = json.dumps([
+        {"name": f"restaurant_{i}", "category": "Restaurant", "lat": 13.75, "lon": 100.5, "match_reason": "Matches preferences"}
+        for i in range(5)
+    ])
+
+    with patch("app.agents.restaurant_agent.geocode_place", return_value={"lat": 13.7563, "lon": 100.5018, "display_name": "Bangkok"}), \
+         patch("app.providers.registry.search_places_nearby", side_effect=fake_search_nearby), \
+         patch("app.tools.geocode_tools.search_places_nearby", side_effect=fake_search_nearby), \
+         patch("app.agents.restaurant_agent.get_llm", return_value=lambda prompt: mock_llm_ranking):
+
+        state = {
+            "destination": "Bangkok",
+            "preferences": ["temples", "street food"],
+            "errors": []
+        }
+
+        t0 = time.time()
+        res = await get_restaurants_for_trip(state)
+        elapsed = time.time() - t0
+
+        assert elapsed < 3.0, f"Expected < 3.0s, got {elapsed:.2f}s"
+        restaurants = res.get("restaurants", [])
+        assert len(restaurants) >= 8, f"Expected >= 8 restaurants, got {len(restaurants)}"
+        for r in restaurants:
+            assert r.get("source") == "nominatim", f"Expected source 'nominatim', got {r.get('source')}"
+            assert r.get("name"), "Restaurant missing name"
+            assert r.get("lat") is not None and r.get("lon") is not None, "Missing coordinates"
+

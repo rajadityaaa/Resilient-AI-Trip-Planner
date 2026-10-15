@@ -21,7 +21,6 @@ from app.providers.circuit_breaker import is_circuit_open
 from app.providers.foursquare import FoursquarePlacesProvider
 from app.tools.cache import cache_get, cache_set
 from app.tools.geocode_tools import search_places_nearby
-from app.tools.places_tools import get_attractions, get_restaurants
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +148,7 @@ def search_places(
     # ── 2. Overpass API ───────────────────────────────────────────────────────
     if kind == "attractions":
         try:
+            from app.tools.places_tools import get_attractions
             osm_results = get_attractions(lat=lat, lon=lon, radius_m=radius_m, limit=limit)
             if osm_results:
                 cache_set(cache_key, osm_results, ttl_seconds=86400)
@@ -158,6 +158,7 @@ def search_places(
 
     elif kind == "restaurants":
         try:
+            from app.tools.places_tools import get_restaurants
             osm_results = get_restaurants(
                 lat=lat, lon=lon, radius_m=radius_m, cuisine=query, limit=limit
             )
@@ -197,7 +198,7 @@ def _search_nominatim(
     if kind == "attractions":
         queries, delta = ["tourist attraction", "museum", "temple", "park"], 0.05
     elif kind == "restaurants":
-        queries = [query] if query else ["restaurant", "cafe"]
+        queries = ["restaurant", "cafe"]
         delta = 0.025
     else:
         queries, delta = ["hotel", "hostel", "guest house"], 0.04
