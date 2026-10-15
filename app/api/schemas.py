@@ -77,12 +77,17 @@ class PlanRequest(BaseModel):
             raise ValueError("preferences must be a list.")
         if len(v) > 10:
             raise ValueError("preferences may contain at most 10 items.")
+        cleaned_list = []
         for item in v:
             if not isinstance(item, str):
                 raise ValueError("Each preference must be a string.")
-            if len(item) > 50:
-                raise ValueError(f"Preference '{item[:20]}…' exceeds 50 characters.")
-        return sanitize_preferences(v, max_items=10, max_item_len=50)
+            cleaned = sanitize_text(item)
+            if not cleaned:
+                continue
+            if len(cleaned) > 50:
+                raise ValueError(f"Preference '{cleaned[:20]}…' exceeds 50 characters.")
+            cleaned_list.append(cleaned)
+        return sanitize_preferences(cleaned_list, max_items=10, max_item_len=50)
 
     @model_validator(mode="after")
     def _validate_date_range(self) -> "PlanRequest":

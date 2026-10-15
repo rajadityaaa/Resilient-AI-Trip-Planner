@@ -18,6 +18,7 @@ _INJECTION_PATTERNS = [
     re.compile(r"<{3,}|>{3,}", re.IGNORECASE),  # Neutralise <<< and >>>
     re.compile(r"<\|.*?\|>", re.IGNORECASE),     # Special tokens like <|im_start|>, <|im_end|>
     re.compile(r"\[/?(inst|sys)\]", re.IGNORECASE), # Llama tokens [INST], [/INST], [SYS]
+    re.compile(r"</?[a-zA-Z0-9_\-\s]*(?:instructions?|prompts?|system|context)[^>]*>", re.IGNORECASE), # XML injection tags
 ]
 
 

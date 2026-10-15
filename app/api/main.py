@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import uuid
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
@@ -80,7 +81,16 @@ app = FastAPI(
 )
 
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Return HTTP 429 with clear JSON error and Retry-After header."""
+    return JSONResponse(
+        status_code=429,
+        content={"error": f"Rate limit exceeded: {exc.detail}"},
+        headers={"Retry-After": "60"},
+    )
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -120,8 +130,15 @@ async def _security_and_request_id_middleware(request: Request, call_next):
                 content={"detail": "Request body exceeds maximum allowed size of 64 KB."},
             )
 
-    # 2. Assign and log Request ID
-    rid = request.headers.get("X-Request-ID") or str(uuid.uuid4())
+    # 2. Assign and log sanitized Request ID (prevents log injection and CRLF header injection)
+    raw_rid = request.headers.get("X-Request-ID")
+    if raw_rid:
+        rid = re.sub(r"[\r\n\x00-\x1f]", "", raw_rid).strip()[:100]
+    else:
+        rid = str(uuid.uuid4())
+    if not rid:
+        rid = str(uuid.uuid4())
+
     logger.info(f"[{rid}] {request.method} {request.url.path}")
 
     # 3. Process request

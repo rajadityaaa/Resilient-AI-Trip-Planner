@@ -199,6 +199,15 @@ async def plan_trip(
     if "errors" not in initial_state or initial_state["errors"] is None:
         initial_state["errors"] = []
 
+    # Defense-in-depth: sanitize user inputs at pipeline entry
+    from app.security.sanitize import sanitize_text, sanitize_preferences
+    if initial_state.get("preferences"):
+        initial_state["preferences"] = sanitize_preferences(initial_state["preferences"])
+    if initial_state.get("origin"):
+        initial_state["origin"] = sanitize_text(initial_state["origin"], max_length=100)
+    if initial_state.get("destination"):
+        initial_state["destination"] = sanitize_text(initial_state["destination"], max_length=100)
+
     # Bind the tracker to the current async context.
     # asyncio.to_thread() copies the context, so worker threads see the same tracker.
     if progress_tracker is not None:

@@ -218,17 +218,20 @@ def get_llm(provider: str = "groq", model: str = FAST_MODEL, max_tokens: int = 1
     return generate
 
 
-def clean_json_response(text: str) -> Any:
+def clean_json_response(text: str, fallback: Any = None) -> Any:
     """
     Extract and parse JSON payload from LLM response text, stripping markdown code fences.
 
     Args:
         text: Raw text string from LLM output.
+        fallback: Optional fallback to return if parsing fails.
 
     Returns:
         Parsed JSON object (dict or list).
     """
     if not text or not text.strip():
+        if fallback is not None:
+            return fallback
         raise ValueError("Empty LLM response text.")
 
     cleaned = text.strip()
@@ -237,6 +240,15 @@ def clean_json_response(text: str) -> Any:
         cleaned = match.group(1).strip()
     else:
         m_arr = re.search(r"(\[[\s\S]*\]|\{[\s\S]*\})", cleaned)
-    parsed = json.loads(cleaned)
+        if m_arr:
+            cleaned = m_arr.group(1).strip()
+
+    try:
+        parsed = json.loads(cleaned)
+    except Exception:
+        if fallback is not None:
+            return fallback
+        raise
+
     from app.security.sanitize import clip_strings
     return clip_strings(parsed, max_len=2000)

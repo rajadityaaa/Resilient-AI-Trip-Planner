@@ -260,7 +260,8 @@ def _pick(items: list, i: int, count: int) -> list:
 
 
 def _weather_for(state: TripState, i: int, date: str) -> str:
-    daily = ((state.get("weather") or {}).get("daily")) or []
+    w = state.get("weather")
+    daily = (w.get("daily") if isinstance(w, dict) else []) or []
     row = next((d for d in daily if d.get("date") == date), None) or (daily[i] if i < len(daily) else None)
     if not row:
         return "weather not available"
