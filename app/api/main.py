@@ -20,11 +20,13 @@ import os
 import re
 import uuid
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -35,10 +37,11 @@ from app.api.jobs import (
     JobStore,
     create_sqlite_job_manager,
 )
-from app.api.schemas import ErrorResponse, JobStatus, PlanRequest
+from app.api.schemas import ChatRequest, ChatResponse, ErrorResponse, JobStatus, PlanRequest
 from app.config import get_settings
 from app.db import database as db
 from app.observability.logging import configure_logging, current_request_id
+from app.security.sanitize import sanitize_text
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +155,20 @@ async def _security_and_request_id_middleware(request: Request, call_next):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
+        # 5. Content-Security-Policy header ONLY for static site responses
+        path = request.url.path
+        if not (path.startswith("/api") or path in ("/docs", "/redoc", "/openapi.json", "/health", "/metrics")):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "img-src 'self' data: https://*.tile.openstreetmap.org https://images.unsplash.com; "
+                "font-src 'self' data:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none';"
+            )
+
         return response
     finally:
         current_request_id.reset(rid_token)
@@ -318,7 +335,11 @@ async def plan_events(job_id: str, request: Request):
     response_model=list[dict[str, Any]],
 )
 async def get_trips(limit: int = 20):
-    """Return the last `limit` (default 20) finished trips (id, destination, dates, created_at)."""
+    """Return the last `limit` (default 20) finished trips (id, destination, dates, created_at).
+    Privacy hardening: Only available when ENV is 'development'.
+    """
+    if get_settings().ENV != "development":
+        raise HTTPException(status_code=404, detail="Not found.")
     return db.list_trips(limit=limit)
 
 
@@ -400,6 +421,89 @@ async def get_shared_trip(slug: str):
     return public_trip
 
 
+@app.get(
+    "/api/share/{slug}/pdf",
+    summary="Download itinerary as PDF by share slug",
+    response_class=Response,
+)
+@limiter.limit(lambda: f"{get_settings().RATE_LIMIT_PER_MIN}/minute")
+async def download_trip_pdf(request: Request, slug: str):
+    """
+    Render and download trip itinerary as a PDF using the public share slug only.
+    Rate-limited and returns 404 for unknown slugs.
+    """
+    trip = db.get_trip_by_slug(slug)
+    if trip is None:
+        raise HTTPException(status_code=404, detail="Shared trip not found.")
+
+    result = trip.get("result") or {}
+    try:
+        from app.tools.pdf_tools import export_itinerary_pdf
+        pdf_bytes = export_itinerary_pdf(result)
+    except Exception as exc:
+        logger.exception(f"Error generating PDF for trip slug '{slug}': {exc}")
+        raise HTTPException(status_code=500, detail="Could not generate PDF.")
+
+    safe_dest = re.sub(r"[^a-zA-Z0-9_\-]", "_", str(trip.get("destination") or "trip"))[:30]
+    filename = f"trip_{safe_dest}_{slug[:8]}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.post(
+    "/api/chat",
+    summary="Interactive travel assistant chat for planned trips",
+    response_model=ChatResponse,
+)
+@limiter.limit(lambda: f"{get_settings().RATE_LIMIT_PER_MIN}/minute")
+async def chat_endpoint(request: Request, body: ChatRequest):
+    """
+    Provide interactive travel assistant refinement and advice for a saved trip.
+    Uses sanitized input, rate limiting, and bounded context.
+    """
+    trip = db.get_trip(body.trip_id_or_slug) or db.get_trip_by_slug(body.trip_id_or_slug)
+    if not trip:
+        job = _store.get(body.trip_id_or_slug)
+        if job and job.result:
+            trip = {"result": job.result}
+        else:
+            raise HTTPException(status_code=404, detail="Trip not found.")
+
+    user_msg = sanitize_text(body.message.strip())
+    if not user_msg:
+        raise HTTPException(status_code=422, detail="Message cannot be empty.")
+
+    clean_context = dict(trip.get("result") or {})
+    clean_context.pop("origin", None)  # Privacy
+    if "errors" in clean_context:
+        clean_context["errors"] = [e.get("message", "") if isinstance(e, dict) else str(e) for e in clean_context["errors"]]
+
+    context_json = json.dumps(clean_context, indent=2, default=str)[:8000]
+
+    system_instruction = (
+        "You are an expert AI travel consultant. "
+        "The user has planned a trip with the details below. "
+        "Help them customize, refine, or answer questions about attractions, restaurants, weather, or pacing. "
+        "Be concise, conversational, and helpful. "
+        "Only suggest alternative activities from the attractions/restaurants lists already in this trip data. "
+        "If none of those fit what the user is asking, say so honestly rather than hallucinating new places.\n\n"
+        f"CURRENT TRIP STATE:\n{context_json}"
+    )
+
+    try:
+        from app.llm.factory import get_llm
+        llm = get_llm()
+        reply = llm(user_msg, system_instruction=system_instruction)
+        return ChatResponse(reply=reply.strip())
+    except Exception as exc:
+        logger.exception(f"Assistant LLM error: {exc}")
+        raise HTTPException(status_code=502, detail="Assistant is temporarily unavailable.")
+
+
 # ── Stats & Observability ─────────────────────────────────────────────────────
 
 @app.get(
@@ -407,7 +511,7 @@ async def get_shared_trip(slug: str):
     summary="Platform statistics",
     response_model=dict[str, Any],
 )
-@limiter.limit(f"{get_settings().RATE_LIMIT_PER_MIN}/minute")
+@limiter.limit(lambda: f"{get_settings().RATE_LIMIT_PER_MIN}/minute")
 async def get_stats_endpoint(request: Request):
     """
     Public platform statistics: total trips, success rate, percentiles, agent timings.
@@ -425,12 +529,16 @@ def mount_metrics_route(application: FastAPI) -> None:
         if getattr(route, "path", None) == "/metrics":
             return
 
+    from starlette.routing import Route
+
     from app.observability.metrics import get_metrics_content
 
-    @application.get("/metrics", summary="Prometheus metrics", include_in_schema=False)
-    async def metrics_endpoint():
+    async def metrics_endpoint(request: Request = None):
         content, content_type = get_metrics_content()
         return Response(content=content, media_type=content_type)
+
+    route = Route("/metrics", endpoint=metrics_endpoint, methods=["GET"], include_in_schema=False)
+    application.router.routes.insert(0, route)
 
 
 if get_settings().ENABLE_METRICS:
@@ -451,4 +559,23 @@ async def health():
         "env": settings.ENV,
         "llm_key_configured": has_groq or has_openrouter,
     }
+
+
+# ── Unknown /api paths return JSON 404 (never index.html) ─────────────────────
+
+@app.api_route(
+    "/api/{path:path}",
+    methods=["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"],
+    include_in_schema=False,
+)
+async def api_catchall(path: str):
+    return JSONResponse(status_code=404, content={"detail": f"API route '/api/{path}' not found."})
+
+
+# ── Static Files (HTML5 Web UI) mounted LAST ──────────────────────────────────
+
+_web_dir = Path(__file__).resolve().parent.parent / "web"
+if _web_dir.exists():
+    app.mount("/", StaticFiles(directory=str(_web_dir), html=True), name="static-web")
+
 

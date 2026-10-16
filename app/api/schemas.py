@@ -130,3 +130,16 @@ class ErrorResponse(BaseModel):
 
     detail: str
     request_id: Optional[str] = None
+
+
+class ChatRequest(BaseModel):
+    """User message sent to assistant for a planned trip."""
+
+    trip_id_or_slug: str = Field(..., min_length=1, max_length=100)
+    message: str = Field(..., min_length=1, max_length=500)
+
+
+class ChatResponse(BaseModel):
+    """Assistant reply for trip inquiries and refinements."""
+
+    reply: str
