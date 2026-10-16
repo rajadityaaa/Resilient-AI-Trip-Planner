@@ -1,6 +1,6 @@
 # ✈️ AI Travel Planner Agent
 
-[![CI Pipeline](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml)
+[![CI](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml/badge.svg?branch=feature/production-upgrade)](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml)
 [![Coverage: >=70%](https://img.shields.io/badge/Coverage-%E2%89%A570%25-brightgreen.svg)](#running-tests)
 [![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
