@@ -21,7 +21,7 @@ export class MapManager {
 
     if (!window.L) {
       // If Leaflet script is still defer-loading, give it a moment
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 15; i++) {
         if (window.L) break;
         await new Promise((r) => setTimeout(r, 100));
       }
@@ -108,7 +108,7 @@ export class MapManager {
     const createIcon = (colorHex, letter) => {
       return L.divIcon({
         className: "custom-map-marker",
-        html: `<div style="background-color:${colorHex}; width:24px; height:24px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 3px 8px rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#ffffff; font-family:'Plus Jakarta Sans',sans-serif;">${letter}</div>`,
+        html: `<div style="background-color:${colorHex}; width:24px; height:24px; border-radius:50%; border:2px solid #ffffff; box-shadow:0 3px 8px rgba(0,0,0,0.65); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#ffffff; font-family:'Plus Jakarta Sans',sans-serif; cursor:pointer;">${letter}</div>`,
         iconSize: [24, 24],
         iconAnchor: [12, 12],
         popupAnchor: [0, -12],
@@ -118,6 +118,9 @@ export class MapManager {
     const iconAttraction = createIcon("#38bdf8", "A"); // Cyan Blue for Attractions
     const iconRestaurant = createIcon("#f97316", "R"); // Warm Orange for Food
     const iconHotel = createIcon("#a855f7", "H");      // Royal Purple for Hotels
+
+    // Track coordinates to spiderfy/disambiguate overlapping markers so every pin is visible
+    const coordUsage = new Map();
 
     const addMarker = (place, type, icon, idx) => {
       let lat = Number(place.lat ?? place.latitude ?? place.location_lat);
@@ -133,15 +136,28 @@ export class MapManager {
         Math.abs(lon) > 180
       ) {
         if (this.destinationCenter) {
-          // Jitter slightly around destination center so place is represented near other sites
-          const angle = idx * 1.37;
-          const dist = 0.003 + (idx % 4) * 0.0015;
-          lat = this.destinationCenter[0] + dist * Math.cos(angle);
-          lon = this.destinationCenter[1] + dist * Math.sin(angle);
+          lat = this.destinationCenter[0];
+          lon = this.destinationCenter[1];
           isEstimated = true;
         } else {
           return;
         }
+      }
+
+      // Check for exact coordinate overlaps (within ~50 meters)
+      // When multiple places share coordinates (e.g. general city/region centroid),
+      // disperse them in an attractive orbital constellation so ALL are visible and clickable!
+      const coordKey = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+      const countAtPos = coordUsage.get(coordKey) || 0;
+      coordUsage.set(coordKey, countAtPos + 1);
+
+      if (countAtPos > 0) {
+        const ring = Math.floor((countAtPos - 1) / 6) + 1;
+        const angle = countAtPos * (Math.PI / 3) + (ring * 0.35); // Stagger concentric rings
+        const spread = 0.0055 * ring; // ~600m radius per ring
+        const cosLat = Math.max(0.2, Math.cos((lat * Math.PI) / 180));
+        lat = lat + spread * Math.cos(angle);
+        lon = lon + (spread / cosLat) * Math.sin(angle);
       }
 
       const marker = L.marker([lat, lon], { icon }).addTo(this.markersGroup);
@@ -187,14 +203,14 @@ export class MapManager {
       try {
         const bounds = this.markersGroup.getBounds();
         if (bounds.isValid()) {
-          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+          this.map.fitBounds(bounds, { padding: [50, 50], maxZoom: 14 });
         }
       } catch (err) {
         console.warn("fitBounds failed:", err);
       }
     } else if (this.markers.length === 1) {
       try {
-        this.map.setView(this.markers[0].marker.getLatLng(), 14);
+        this.map.setView(this.markers[0].marker.getLatLng(), 13);
       } catch {
         // ignore
       }

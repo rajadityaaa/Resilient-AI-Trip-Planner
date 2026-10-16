@@ -122,7 +122,15 @@ async def get_hotels(state: TripState) -> TripState:
         if not isinstance(generated, list):
             generated = [generated]
 
-        for item in generated:
+        lat, lon = 0.0, 0.0
+        try:
+            geo = geocode_place(dest)
+            lat, lon = float(geo.get("lat", 0.0)), float(geo.get("lon", 0.0))
+        except Exception:
+            pass
+
+        import math
+        for idx, item in enumerate(generated):
             item["is_mock"] = True
             item["source"] = "llm_generated"
             item["price_source"] = "estimated"
@@ -130,6 +138,13 @@ async def get_hotels(state: TripState) -> TripState:
                 item["lat"] = item["location_lat"]
             if "location_lon" in item and "lon" not in item:
                 item["lon"] = item["location_lon"]
+
+            if (item.get("lat") is None or item.get("lat") == 0.0) and lat != 0.0:
+                angle = idx * (2 * math.pi / max(len(generated), 1))
+                item["lat"] = round(lat + 0.005 * math.cos(angle), 5)
+                item["lon"] = round(lon + 0.005 * math.sin(angle), 5)
+                item["location_lat"] = item["lat"]
+                item["location_lon"] = item["lon"]
 
         state["hotels"] = generated
     except Exception as err:
@@ -147,7 +162,6 @@ def _placeholder_hotels(state: TripState, dest: str) -> list:
     per_night = round(budget * 0.35 / 3.0, 2)
     lat, lon = 0.0, 0.0
     try:
-        from app.tools.geocode_tools import geocode_place
         geo = geocode_place(dest)
         lat = float(geo.get("lat", 0.0))
         lon = float(geo.get("lon", 0.0))
