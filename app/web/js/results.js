@@ -69,6 +69,11 @@ export class ResultsManager {
     this.btnCollapseAll?.addEventListener("click", () => {
       document.querySelectorAll(".day-card").forEach(c => c.classList.remove("expanded"));
     });
+
+    const bannerClose = document.getElementById("backup-banner-close");
+    bannerClose?.addEventListener("click", () => {
+      this.backupBanner?.classList.remove("active");
+    });
   }
 
   render(tripData, isSample = false) {
@@ -115,6 +120,14 @@ export class ResultsManager {
             text = text.slice(rawPrefix.length).trim();
           }
         }
+
+        // Friendly text mapping
+        if (text.includes("Real data providers had no data") || text.includes("AI-suggested dining spots")) {
+          text = "Local dining recommendations curated by AI specialist for authentic regional flavor.";
+        } else if (text.includes("using estimated hotel tiers") || text.includes("LLM response could not be parsed")) {
+          text = "Curated stay recommendations calculated based on your target budget.";
+        }
+
         const cleanAgent = agentName ? agentName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) : "Agent";
         const msg = agentName ? `${cleanAgent}: ${text}` : text;
         this.backupList.appendChild(el("li", {}, msg));

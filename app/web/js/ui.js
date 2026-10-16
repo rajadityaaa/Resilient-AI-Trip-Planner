@@ -55,11 +55,7 @@ class App {
         if (targetPanel) {
           targetPanel.classList.add("active");
           if (targetId === "tab-map") {
-            setTimeout(() => {
-              if (this.mapManager?.map) {
-                this.mapManager.map.invalidateSize();
-              }
-            }, 100);
+            this.mapManager?.onTabVisible();
           }
         }
       });

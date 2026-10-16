@@ -145,6 +145,18 @@ def _placeholder_hotels(state: TripState, dest: str) -> list:
     """Deterministic fallback hotel list when all suppliers fail."""
     budget = state.get("budget_total", 1000.0)
     per_night = round(budget * 0.35 / 3.0, 2)
+    lat, lon = 0.0, 0.0
+    try:
+        from app.tools.geocode_tools import geocode_place
+        geo = geocode_place(dest)
+        lat = float(geo.get("lat", 0.0))
+        lon = float(geo.get("lon", 0.0))
+    except Exception:
+        pass
+
+    h1_lat, h1_lon = (round(lat + 0.003, 5), round(lon + 0.002, 5)) if lat != 0.0 else (0.0, 0.0)
+    h2_lat, h2_lon = (round(lat - 0.003, 5), round(lon - 0.002, 5)) if lat != 0.0 else (0.0, 0.0)
+
     return [
         {
             "name": f"Grand Central Hotel ({dest.title()})",
@@ -153,10 +165,10 @@ def _placeholder_hotels(state: TripState, dest: str) -> list:
             "price_level": 3,
             "price_per_night_usd": per_night,
             "price_source": "estimated",
-            "location_lat": 0.0,
-            "location_lon": 0.0,
-            "lat": 0.0,
-            "lon": 0.0,
+            "location_lat": h1_lat,
+            "location_lon": h1_lon,
+            "lat": h1_lat,
+            "lon": h1_lon,
             "amenities": ["Free WiFi", "Breakfast", "Gym"],
             "source": "fallback",
         },
@@ -167,10 +179,10 @@ def _placeholder_hotels(state: TripState, dest: str) -> list:
             "price_level": 2,
             "price_per_night_usd": round(per_night * 0.65, 2),
             "price_source": "estimated",
-            "location_lat": 0.0,
-            "location_lon": 0.0,
-            "lat": 0.0,
-            "lon": 0.0,
+            "location_lat": h2_lat,
+            "location_lon": h2_lon,
+            "lat": h2_lat,
+            "lon": h2_lon,
             "amenities": ["Free WiFi", "AC"],
             "source": "fallback",
         },

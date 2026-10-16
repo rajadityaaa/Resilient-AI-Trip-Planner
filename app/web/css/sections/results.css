@@ -78,17 +78,66 @@
 /* Fallback / Backup Data Banner */
 .backup-data-banner {
   display: none;
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.25);
+  background: rgba(56, 189, 248, 0.07);
+  border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: var(--radius-md);
   padding: var(--space-sm) var(--space-md);
-  margin-bottom: var(--space-xl);
+  margin-bottom: var(--space-lg);
   font-size: var(--font-size-xs);
-  color: #fca5a5;
+  color: #bae6fd;
 }
 
 .backup-data-banner.active {
   display: block;
+  animation: fadeIn 200ms ease;
+}
+
+.backup-banner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.backup-banner-title {
+  font-weight: var(--font-weight-bold);
+  color: #e0f2fe;
+  font-size: var(--font-size-sm);
+}
+
+.backup-banner-close {
+  background: transparent;
+  border: none;
+  color: #7dd3fc;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 150ms ease;
+}
+
+.backup-banner-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.backup-banner-desc {
+  color: #93c5fd;
+  margin-bottom: 6px;
+  opacity: 0.95;
+  font-size: var(--font-size-xs);
+}
+
+#backup-data-list {
+  margin: 0;
+  padding-left: 18px;
+}
+
+#backup-data-list li {
+  margin-bottom: 3px;
+  line-height: 1.4;
+  color: #e2e8f0;
 }
 
 /* Dashboard Sticky Tabs */
@@ -219,11 +268,14 @@
   overflow: hidden;
   border: 1px solid var(--color-border-hairline);
   margin-bottom: var(--space-xl);
+  background-color: #0b111e;
+  min-height: 480px;
 }
 
 #map-view {
   width: 100%;
-  height: 480px;
+  height: 520px;
+  min-height: 480px;
   background-color: #0b111e;
 }
 

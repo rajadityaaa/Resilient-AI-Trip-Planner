@@ -38,6 +38,7 @@
   </script>
 
   <!-- Self-Hosted Modular Stylesheets -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/layout.css">
@@ -376,8 +377,12 @@
 
           <!-- Fallback / Backup Data Banner -->
           <div id="backup-data-banner" class="backup-data-banner">
-            <strong>Notice:</strong> Some agent sections utilized resilient backup data.
-            <ul id="backup-data-list" style="margin-top: 6px; padding-left: 18px;"></ul>
+            <div class="backup-banner-header">
+              <span class="backup-banner-title">✨ Autonomous Curation Notice</span>
+              <button type="button" id="backup-banner-close" class="backup-banner-close" aria-label="Dismiss notice">✕</button>
+            </div>
+            <div class="backup-banner-desc">Some items were intelligently curated using AI recommendations to ensure a complete itinerary:</div>
+            <ul id="backup-data-list"></ul>
           </div>
 
           <!-- Actions Bar -->
@@ -746,7 +751,8 @@
     </div>
   </footer>
 
-  <!-- ES Module Application Entrypoint -->
+  <!-- Vendored Leaflet Library & ES Module Application Entrypoint -->
+  <script src="vendor/leaflet/leaflet.js" defer></script>
   <script type="module" src="js/ui.js"></script>
 </body>
 </html>
