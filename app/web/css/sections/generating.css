@@ -1,0 +1,184 @@
+/**
+ * sections/generating.css - Real Agent Pipeline Execution & Progress State
+ */
+
+.generating-section {
+  display: none;
+  padding-top: calc(var(--space-4xl) + 2rem);
+  padding-bottom: var(--space-4xl);
+  min-height: 80vh;
+}
+
+.generating-section.active {
+  display: block;
+}
+
+.generating-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-hairline);
+  border-radius: var(--radius-xl);
+  padding: clamp(var(--space-lg), 5vw, var(--space-2xl));
+  box-shadow: var(--shadow-elevated);
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.generating-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+}
+
+.generating-header h2 {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-xs);
+}
+
+.generating-subtext {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+}
+
+/* Overall Progress Bar */
+.progress-bar-container {
+  margin-bottom: var(--space-xl);
+}
+
+.progress-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.progress-track {
+  width: 100%;
+  height: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
+  width: 0%;
+  border-radius: var(--radius-full);
+  transition: width 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 0 12px var(--color-accent-glow);
+}
+
+/* Stages Grid / List */
+.stages-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
+}
+
+.stage-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-glass-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.stage-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.stage-status-icon {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+}
+
+.stage-name {
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+}
+
+.stage-detail {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+/* Status Variations */
+.stage-item[data-status="pending"] .stage-status-icon {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-muted);
+}
+
+.stage-item[data-status="running"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.stage-item[data-status="running"] .stage-status-icon {
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  animation: spin 1.5s linear infinite;
+}
+
+.stage-item[data-status="done"] .stage-status-icon {
+  background: var(--color-emerald-accent);
+  color: #fff;
+}
+
+.stage-item[data-status="done"] .stage-detail {
+  color: var(--color-emerald-accent);
+}
+
+.stage-item[data-status="warn"] .stage-status-icon {
+  background: var(--color-warning);
+  color: #fff;
+}
+
+.stage-item[data-status="failed"] .stage-status-icon {
+  background: var(--color-error);
+  color: #fff;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+/* Live Elapsed Timer */
+.generating-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-md);
+}
+
+/* Server Wakeup / Cold Start Notice */
+.cold-start-notice {
+  display: none;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-light);
+  text-align: center;
+}
+
+.cold-start-notice.active {
+  display: block;
+}

@@ -1,0 +1,182 @@
+/**
+ * sections/planner.css - Full Interactive Trip Planner Form
+ */
+
+.planner-section {
+  position: relative;
+  background-color: var(--color-bg-base);
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.planner-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-hairline);
+  border-radius: var(--radius-xl);
+  padding: clamp(var(--space-lg), 5vw, var(--space-3xl));
+  box-shadow: var(--shadow-elevated);
+}
+
+.planner-header {
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto var(--space-2xl);
+}
+
+.planner-header h2 {
+  font-size: var(--font-size-3xl);
+  margin-bottom: var(--space-xs);
+}
+
+.planner-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-xl);
+  margin-bottom: var(--space-xl);
+}
+
+/* Surprise Me Toggle */
+.surprise-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-light);
+  margin-top: 4px;
+}
+
+.surprise-toggle input[type="checkbox"] {
+  accent-color: var(--color-accent);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+/* Dates & Duration Banner */
+.date-fields-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+}
+
+.trip-duration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-accent-light);
+  background: var(--color-accent-soft);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  margin-top: 4px;
+}
+
+/* Budget & Currency Group */
+.budget-input-group {
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  gap: var(--space-xs);
+}
+
+/* Travel Style Selector */
+.style-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-xs);
+}
+
+.style-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-sm) var(--space-xs);
+  background: var(--color-bg-glass-card);
+  border: 1px solid var(--color-border-hairline);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+  min-height: 70px;
+}
+
+.style-option input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.style-option .style-icon {
+  font-size: 1.3rem;
+  margin-bottom: 4px;
+}
+
+.style-option .style-label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.style-option:hover {
+  border-color: var(--color-accent-light);
+  background: var(--color-bg-glass-hover);
+}
+
+.style-option.selected {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+.style-option.selected .style-label {
+  color: var(--color-accent-light);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Preferences Counter & Prefixes */
+.preferences-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-xs);
+}
+
+.preferences-counter {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-accent-light);
+}
+
+.custom-prefs-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  margin-top: var(--space-lg);
+}
+
+/* Actions Footer */
+.planner-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: var(--space-xl);
+  margin-top: var(--space-xl);
+}
+
+@media (max-width: 900px) {
+  .planner-grid {
+    grid-template-columns: 1fr;
+  }
+  .custom-prefs-grid {
+    grid-template-columns: 1fr;
+  }
+  .planner-actions {
+    flex-direction: column-reverse;
+    gap: var(--space-md);
+  }
+  .planner-actions .btn {
+    width: 100%;
+  }
+}
