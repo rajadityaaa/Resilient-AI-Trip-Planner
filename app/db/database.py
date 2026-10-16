@@ -19,7 +19,7 @@ import sqlite3
 import time
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Generator, Optional
+from typing import Any, Generator, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -266,6 +266,133 @@ def get_daily_trip_count(window_seconds: float = 86400) -> int:
     with _connect() as conn:
         row = conn.execute("SELECT COUNT(*) FROM trips WHERE created_at >= ?", (cutoff,)).fetchone()
         return row[0] if row else 0
+
+
+def _compute_percentile(data: list[float], p: float) -> float:
+    """Compute p-th percentile (0.0 to 1.0) with linear interpolation."""
+    if not data:
+        return 0.0
+    sorted_d = sorted(data)
+    n = len(sorted_d)
+    if n == 1:
+        return round(float(sorted_d[0]), 3)
+    k = (n - 1) * p
+    f = int(k)
+    c = min(f + 1, n - 1)
+    d = k - f
+    val = sorted_d[f] + d * (sorted_d[c] - sorted_d[f])
+    return round(float(val), 3)
+
+
+def get_stats() -> dict[str, Any]:
+    """
+    Compute aggregate platform statistics from the trips table.
+    Contains no personal data (no origin, destination, preferences, dates).
+    Returns sensible zeros if there are no trips.
+    """
+    cutoff_24h = time.time() - 86400.0
+
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT status, duration_s, created_at, timings_json
+            FROM trips
+            """
+        ).fetchall()
+
+    total_trips = len(rows)
+    if total_trips == 0:
+        return {
+            "total_trips": 0,
+            "success_rate": 0.0,
+            "durations": {"p50": 0.0, "p95": 0.0, "avg": 0.0},
+            "p50_duration_s": 0.0,
+            "p95_duration_s": 0.0,
+            "avg_duration_s": 0.0,
+            "average_duration_per_agent": {},
+            "fallback_rate_per_agent": {},
+            "llm_model_usage": {},
+            "trips_last_24h": 0,
+        }
+
+    successful = 0
+    durations: list[float] = []
+    trips_24h = 0
+
+    agent_durations: dict[str, list[float]] = {}
+    agent_fallbacks: dict[str, list[bool]] = {}
+    model_usage: dict[str, int] = {}
+
+    for row in rows:
+        st = row["status"]
+        if st in ("done", "finished"):
+            successful += 1
+
+        dur = row["duration_s"]
+        if dur is not None and isinstance(dur, (int, float)) and dur >= 0:
+            durations.append(float(dur))
+
+        created = row["created_at"]
+        if created is not None and float(created) >= cutoff_24h:
+            trips_24h += 1
+
+        raw_timings = row["timings_json"]
+        if raw_timings:
+            try:
+                t_obj = json.loads(raw_timings) if isinstance(raw_timings, str) else raw_timings
+                if isinstance(t_obj, dict):
+                    agents_map = t_obj.get("agents") or {}
+                    for a_name, a_info in agents_map.items():
+                        if not isinstance(a_info, dict):
+                            continue
+                        a_dur = a_info.get("duration_s")
+                        if a_dur is not None and isinstance(a_dur, (int, float)):
+                            agent_durations.setdefault(a_name, []).append(float(a_dur))
+
+                        fb = bool(a_info.get("fallback_used"))
+                        agent_fallbacks.setdefault(a_name, []).append(fb)
+
+                        m = a_info.get("llm_model")
+                        if m and isinstance(m, str):
+                            model_usage[m] = model_usage.get(m, 0) + 1
+            except Exception:
+                pass
+
+    success_rate = round(successful / total_trips, 4)
+
+    if durations:
+        p50 = _compute_percentile(durations, 0.50)
+        p95 = _compute_percentile(durations, 0.95)
+        avg = round(sum(durations) / len(durations), 3)
+    else:
+        p50 = 0.0
+        p95 = 0.0
+        avg = 0.0
+
+    avg_agent_dur = {
+        name: round(sum(d_list) / len(d_list), 3)
+        for name, d_list in agent_durations.items()
+        if d_list
+    }
+
+    fb_rate_agent = {
+        name: round(sum(1 for x in fb_list if x) / len(fb_list), 4)
+        for name, fb_list in agent_fallbacks.items()
+        if fb_list
+    }
+
+    return {
+        "total_trips": total_trips,
+        "success_rate": success_rate,
+        "durations": {"p50": p50, "p95": p95, "avg": avg},
+        "p50_duration_s": p50,
+        "p95_duration_s": p95,
+        "avg_duration_s": avg,
+        "average_duration_per_agent": avg_agent_dur,
+        "fallback_rate_per_agent": fb_rate_agent,
+        "llm_model_usage": model_usage,
+        "trips_last_24h": trips_24h,
+    }
 
 
 def recover_stale_jobs() -> int:

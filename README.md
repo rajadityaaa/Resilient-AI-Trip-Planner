@@ -204,13 +204,24 @@ travel-planner-agent/
 
 ---
 
-## 🔮 Production Upgrade Path
+## 📈 Observability & Monitoring
 
-- Swap in-memory cache → Redis/disk-backed with real invalidation
-- Swap mock hotel/flight data → Amadeus Self-Service API (genuine free tier)
-- Add Supabase for persistence, auth, and trip history — `TripState` is already a flat, serializable schema that maps directly onto a `trips` table
-- Move agent execution behind a FastAPI backend so the UI and orchestration scale independently
-- Parallelize independent branches of the Coordinator graph (weather/attractions/restaurants/hotels can run concurrently once the destination is resolved)
+The system includes end-to-end observability across the backend, coordinator, and user interface:
+
+- **Structured Logging (`app/observability/logging.py`)**: One JSON line per event containing timestamp, level, logger, message, `request_id`, and `job_id`. Outputs readable colored/plain text when `ENV=development` and structured JSON otherwise. Automatically masks sensitive API keys.
+- **Per-Agent Timing & Critical Path (`app/agents/coordinator.py`)**: Every agent measures `start_offset_s`, `duration_s`, `status` (`done|warn|failed|timeout`), `fallback_used`, `source`, and `llm_model`. Computes the slowest agent execution chain (`critical_path`) and persists timing metrics to SQLite (`trips.timings_json`).
+- **Platform Statistics (`GET /api/stats`)**: Public, rate-limited endpoint exposing aggregate metrics without revealing personal information (no origins, destinations, or user preferences):
+  - Total trips planned & 24h trip volume
+  - Success rate
+  - Duration percentiles (`p50`, `p95`, `avg`)
+  - Per-agent average latency & fallback rates
+  - LLM model usage distribution
+- **Optional Prometheus Metrics (`GET /metrics`)**: When `ENABLE_METRICS=true`, exposes Prometheus counters and histograms for jobs, agent latencies, and LLM failures. When disabled, the route is completely absent.
+- **Streamlit Insights Tab**: Visualizes parallel agent execution as a Plotly Gantt-style timeline alongside platform historical averages.
+
+> ⚠️ **Privacy Warning (LangSmith Tracing)**:
+> Optional LangSmith tracing is activated **only** when `LANGCHAIN_API_KEY` is provided and `LANGCHAIN_TRACING_V2=true`. It is strictly a no-op otherwise.
+> **Note:** Tracing sends prompts and agent inputs to a third-party cloud service. Keep tracing disabled when running with real personal or confidential data.
 
 ---
 

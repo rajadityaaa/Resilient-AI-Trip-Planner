@@ -4,20 +4,17 @@ import os
 import re
 import threading
 import time
+from contextvars import ContextVar
 from typing import Any, Callable, Optional
 
 import requests
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
-
 from app.config import get_settings
 
 logger = logging.getLogger(__name__)
+
+# ContextVar storing the last successfully invoked LLM model
+last_llm_model: ContextVar[Optional[str]] = ContextVar("last_llm_model", default=None)
 
 # Groq retired llama-3.1-8b-instant and llama-3.3-70b-versatile on 2026-08-16 (they now return 404).
 # Replacements recommended by Groq: openai/gpt-oss-20b (fast) and openai/gpt-oss-120b / qwen3.6-27b (smart).
@@ -119,16 +116,25 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
             if remaining < 2:
                 raise RuntimeError(f"LLM deadline reached. Last error: {last_err}")
             try:
+                call_start = time.time()
                 response = requests.post(url, json=payload, headers=headers, timeout=min(20, remaining))
+                latency_ms = round((time.time() - call_start) * 1000, 1)
+
                 if response.status_code == 401:
                     raise ValueError("Unauthorized: Invalid API Key.")
                 if response.status_code in (404, 410) or "decommissioned" in response.text[:300]:
                     _dead_models.add(m)
                     last_err = f"{response.status_code} model unavailable: {m} ({response.text[:120]})"
-                    logger.warning(f"[LLM Factory] Groq model '{m}' unavailable - skipping. {response.text[:150]}")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status={response.status_code} "
+                        f"retries={attempt} prompt_len={len(prompt)} error=decommissioned"
+                    )
                     break
                 if response.status_code == 400 and extras and attempt == 0:
-                    logger.warning(f"[LLM Factory] '{m}' rejected reasoning params ({response.text[:120]}); retrying without.")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=400 "
+                        f"retries={attempt} prompt_len={len(prompt)} error=rejected_reasoning_params"
+                    )
                     payload = {k: v for k, v in payload.items() if k not in extras}
                     payload["max_tokens"] = max_tokens
                     continue
@@ -138,7 +144,10 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
                     except ValueError:
                         wait = 99.0
                     last_err = f"429 rate limit on {m}"
-                    logger.warning(f"[LLM Factory] Groq '{m}' rate limited (retry-after={wait}s).")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=429 "
+                        f"retries={attempt} prompt_len={len(prompt)} retry_after={wait}s"
+                    )
                     if attempt == 0 and wait <= 4 and deadline - time.time() > wait + 4:
                         time.sleep(wait + 0.2)
                         continue
@@ -147,15 +156,25 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
                 content = _strip_think(response.json()["choices"][0]["message"].get("content") or "")
                 if not content:
                     last_err = f"empty response from {m} (token budget used up by reasoning?)"
-                    logger.warning(f"[LLM Factory] {last_err}")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=200 "
+                        f"retries={attempt} prompt_len={len(prompt)} error=empty_response"
+                    )
                     break
-                logger.info(f"[LLM Factory] Groq call succeeded with model: {m}")
+
+                last_llm_model.set(m)
+                logger.info(
+                    f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=200 "
+                    f"retries={attempt} prompt_len={len(prompt)}"
+                )
                 return content
             except ValueError:
                 raise
             except Exception as e:
                 last_err = e
-                logger.warning(f"[LLM Factory] Groq model '{m}' failed: {e}")
+                logger.warning(
+                    f"[LLM] provider=groq model={m} retries={attempt} prompt_len={len(prompt)} failed: {e}"
+                )
                 break
 
     raise RuntimeError(f"All Groq models exhausted. Last error: {last_err}")
@@ -184,9 +203,24 @@ def _call_openrouter(prompt: str, system_instruction: Optional[str] = None,
     messages.append({"role": "user", "content": prompt})
     payload = {"model": model_name, "messages": messages, "temperature": 0.5, "max_tokens": max_tokens}
 
-    response = requests.post(url, json=payload, headers=headers, timeout=timeout)
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
+    call_start = time.time()
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+        latency_ms = round((time.time() - call_start) * 1000, 1)
+        response.raise_for_status()
+        last_llm_model.set(model_name)
+        logger.info(
+            f"[LLM] provider=openrouter model={model_name} latency_ms={latency_ms} status=200 "
+            f"retries=0 prompt_len={len(prompt)}"
+        )
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as exc:
+        latency_ms = round((time.time() - call_start) * 1000, 1)
+        logger.warning(
+            f"[LLM] provider=openrouter model={model_name} latency_ms={latency_ms} "
+            f"prompt_len={len(prompt)} failed: {exc}"
+        )
+        raise
 
 
 def get_llm(provider: str = "groq", model: str = FAST_MODEL, max_tokens: int = 1500) -> Callable[[str, Optional[str]], str]:

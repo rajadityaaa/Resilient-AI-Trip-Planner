@@ -13,14 +13,19 @@ import traceback
 import streamlit as st
 
 from app.agents.coordinator import plan_trip
+from app.observability.logging import configure_logging
 from app.ui.sidebar import render_sidebar
 from app.ui.tabs.budget_tab import render_budget_tab
 from app.ui.tabs.chat_tab import render_chat_tab
+from app.ui.tabs.insights_tab import render_insights_tab
 from app.ui.tabs.itinerary_tab import render_itinerary_tab
 from app.ui.tabs.map_tab import render_map_tab
 from app.ui.tabs.overview_tab import render_overview_tab
 from app.ui.tabs.weather_tab import render_weather_tab
 from app.ui.theme import get_custom_css, render_footer_html, render_hero_section
+
+# Configure structured/development logging once on startup
+configure_logging()
 
 # Page Configuration
 st.set_page_config(page_title="AI Travel Planner & Coordinator", layout="wide")
@@ -195,10 +200,11 @@ def main():
             "💵 Budget & Currency",
             "🌦️ Weather & Packing",
             "🗺️ Interactive Map",
-            "💬 AI Chat Assistant"
+            "💬 AI Chat Assistant",
+            "⏱️ Insights",
         ]
         
-        tab_overview, tab_itinerary, tab_budget, tab_weather, tab_map, tab_chat = st.tabs(tab_titles)
+        tab_overview, tab_itinerary, tab_budget, tab_weather, tab_map, tab_chat, tab_insights = st.tabs(tab_titles)
 
         with tab_overview:
             render_overview_tab(trip_result)
@@ -217,6 +223,9 @@ def main():
             
         with tab_chat:
             render_chat_tab(trip_result)
+
+        with tab_insights:
+            render_insights_tab(trip_result)
     else:
         # Landing hero screen — shown before any trip has been planned
         st.markdown(render_hero_section(), unsafe_allow_html=True)

@@ -173,6 +173,10 @@ class SqliteJobStore:
         if job.finished_at and job.started_at:
             duration_s = round(job.finished_at - job.started_at, 3)
 
+        timings_obj = None
+        if job.result and isinstance(job.result, dict):
+            timings_obj = job.result.get("timings")
+
         try:
             slug = db.save_trip(
                 trip_id=job.job_id,
@@ -182,7 +186,7 @@ class SqliteJobStore:
                 result_obj=job.result,
                 errors_obj=errors if errors else None,
                 duration_s=duration_s,
-                timings_obj=None,
+                timings_obj=timings_obj,
                 created_at=job.created_at,
             )
             job.share_slug = slug
@@ -271,7 +275,10 @@ class JobManager:
     async def _execute(self, job: Job, tracker: "ProgressTracker") -> None:
         """Call plan_trip and update the job record."""
         from app.agents.coordinator import plan_trip
+        from app.observability.logging import current_job_id
+        from app.observability.metrics import record_job_status
 
+        job_token = current_job_id.set(job.job_id)
         job._tracker = tracker  # type: ignore[attr-defined]
 
         job.status = "running"
@@ -291,6 +298,8 @@ class JobManager:
         finally:
             job.finished_at = time.time()
             self._store.update(job)
+            record_job_status(job.status)
+            current_job_id.reset(job_token)
 
 
 # ── Factory functions ─────────────────────────────────────────────────────────

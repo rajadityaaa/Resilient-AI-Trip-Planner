@@ -77,6 +77,8 @@ class FakeLLM:
 
     def respond(self, prompt: str, system_instruction: Optional[str] = None, **kwargs) -> str:
         self.call_history.append({"prompt": prompt, "system": system_instruction})
+        from app.llm.factory import last_llm_model
+        last_llm_model.set("llama-3.3-70b-versatile")
         if self.down:
             raise RuntimeError("FakeLLM: Service unavailable (LLM is down).")
 

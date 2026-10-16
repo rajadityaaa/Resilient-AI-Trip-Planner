@@ -38,12 +38,12 @@ from app.api.jobs import (
 from app.api.schemas import ErrorResponse, JobStatus, PlanRequest
 from app.config import get_settings
 from app.db import database as db
-from app.security import install_secret_masking
+from app.observability.logging import configure_logging, current_request_id
 
 logger = logging.getLogger(__name__)
 
-# Install secret masking filter on all root/active loggers
-install_secret_masking()
+# Configure structured logging (JSON in prod/test, readable in dev) & secret masking
+configure_logging()
 
 # ── App state – initialized eagerly with SQLite store ─────────────────────────
 
@@ -57,7 +57,7 @@ _store, _manager = create_sqlite_job_manager()
 async def lifespan(application: FastAPI):
     """Initialize SQLite database and shared state on startup."""
     global _store, _manager
-    install_secret_masking()
+    configure_logging()
     db.init_db()
     _store, _manager = create_sqlite_job_manager()
     logger.info("Travel Planner API started (SQLite persistence enabled).")
@@ -139,18 +139,22 @@ async def _security_and_request_id_middleware(request: Request, call_next):
     if not rid:
         rid = str(uuid.uuid4())
 
-    logger.info(f"[{rid}] {request.method} {request.url.path}")
+    rid_token = current_request_id.set(rid)
+    try:
+        logger.info(f"[{rid}] {request.method} {request.url.path}")
 
-    # 3. Process request
-    response: Response = await call_next(request)
+        # 3. Process request
+        response: Response = await call_next(request)
 
-    # 4. Attach security headers and X-Request-ID
-    response.headers["X-Request-ID"] = rid
-    response.headers["X-Content-Type-Options"] = "nosniff"
-    response.headers["X-Frame-Options"] = "DENY"
-    response.headers["X-XSS-Protection"] = "1; mode=block"
-    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-    return response
+        # 4. Attach security headers and X-Request-ID
+        response.headers["X-Request-ID"] = rid
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+    finally:
+        current_request_id.reset(rid_token)
 
 
 # ── Global exception handler ──────────────────────────────────────────────────
@@ -394,6 +398,43 @@ async def get_shared_trip(slug: str):
         "errors": trip.get("errors") or [],
     }
     return public_trip
+
+
+# ── Stats & Observability ─────────────────────────────────────────────────────
+
+@app.get(
+    "/api/stats",
+    summary="Platform statistics",
+    response_model=dict[str, Any],
+)
+@limiter.limit(f"{get_settings().RATE_LIMIT_PER_MIN}/minute")
+async def get_stats_endpoint(request: Request):
+    """
+    Public platform statistics: total trips, success rate, percentiles, agent timings.
+    Never exposes personal travel data or user inputs.
+    """
+    return db.get_stats()
+
+
+def mount_metrics_route(application: FastAPI) -> None:
+    """Mount /metrics endpoint if ENABLE_METRICS is true and not already mounted."""
+    from app.config import get_settings
+    if not get_settings().ENABLE_METRICS:
+        return
+    for route in application.routes:
+        if getattr(route, "path", None) == "/metrics":
+            return
+
+    from app.observability.metrics import get_metrics_content
+
+    @application.get("/metrics", summary="Prometheus metrics", include_in_schema=False)
+    async def metrics_endpoint():
+        content, content_type = get_metrics_content()
+        return Response(content=content, media_type=content_type)
+
+
+if get_settings().ENABLE_METRICS:
+    mount_metrics_route(app)
 
 
 # ── Health ────────────────────────────────────────────────────────────────────

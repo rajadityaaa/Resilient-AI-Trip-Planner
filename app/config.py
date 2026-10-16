@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MIN: int = 5
     DAILY_JOB_LIMIT: int = 100
     PORT: int = 8000
+    ENABLE_METRICS: bool = False
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
