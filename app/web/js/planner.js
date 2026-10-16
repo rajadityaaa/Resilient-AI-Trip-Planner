@@ -33,7 +33,7 @@ export class PlannerManager {
     this.resetBtn = document.getElementById("plan-reset-btn");
 
     this.travelersCount = 1;
-    this.selectedStyle = "adventure";
+    this.selectedStyles = new Set(["adventure"]);
     this.selectedChips = new Set();
 
     this.init();
@@ -123,15 +123,28 @@ export class PlannerManager {
       }
     });
 
-    // Style options
+    // Style options (multi-selection)
     document.querySelectorAll(".style-option").forEach((opt) => {
-      opt.addEventListener("click", () => {
-        document.querySelectorAll(".style-option").forEach(o => o.classList.remove("selected"));
-        opt.classList.add("selected");
-        const radio = opt.querySelector("input[type='radio']");
-        if (radio) {
-          radio.checked = true;
-          this.selectedStyle = radio.value;
+      opt.addEventListener("click", (e) => {
+        if (e.target.tagName !== "INPUT") {
+          e.preventDefault();
+        }
+        const checkbox = opt.querySelector("input[type='checkbox']");
+        const val = checkbox ? checkbox.value : opt.dataset.style;
+        if (!val) return;
+
+        if (this.selectedStyles.has(val)) {
+          if (this.selectedStyles.size > 1) {
+            this.selectedStyles.delete(val);
+            opt.classList.remove("selected");
+            if (checkbox) checkbox.checked = false;
+          } else {
+            showToast("Please keep at least one travel style selected.", "info");
+          }
+        } else {
+          this.selectedStyles.add(val);
+          opt.classList.add("selected");
+          if (checkbox) checkbox.checked = true;
         }
       });
     });
@@ -185,6 +198,14 @@ export class PlannerManager {
       this.form.reset();
       this.selectedChips.clear();
       document.querySelectorAll(".chip[data-pref]").forEach(c => c.classList.remove("selected"));
+      this.selectedStyles = new Set(["adventure"]);
+      document.querySelectorAll(".style-option").forEach((opt) => {
+        const val = opt.querySelector("input")?.value || opt.dataset.style;
+        const isSel = val === "adventure";
+        opt.classList.toggle("selected", isSel);
+        const cb = opt.querySelector("input[type='checkbox']");
+        if (cb) cb.checked = isSel;
+      });
       this.travelersCount = 1;
       this.updateTravelers();
       this.initMinDates();
@@ -309,23 +330,20 @@ export class PlannerManager {
   }
 
   buildPlanPayload() {
-    // Style mapping per Section 6C rules:
-    // adventure->adventure, family->family, romantic->romantic, backpacking->solo, relaxation/luxury/cultural->leisure
-    // and ALSO add the style label as a preference item when the mapping loses information.
+    // Style mapping:
+    // User can select multiple styles (e.g. Adventure, Luxury, Family).
+    // Pick the most specific trip_type for backend validation:
+    // adventure > romantic > family > solo > leisure
     let mappedType = "leisure";
-    const style = this.selectedStyle;
-    const extraStylePrefs = [];
+    const styles = Array.from(this.selectedStyles);
+    if (styles.includes("adventure")) mappedType = "adventure";
+    else if (styles.includes("romantic")) mappedType = "romantic";
+    else if (styles.includes("family")) mappedType = "family";
+    else if (styles.includes("backpacking")) mappedType = "solo";
+    else mappedType = "leisure";
 
-    if (style === "adventure") mappedType = "adventure";
-    else if (style === "family") mappedType = "family";
-    else if (style === "romantic") mappedType = "romantic";
-    else if (style === "backpacking") {
-      mappedType = "solo";
-      extraStylePrefs.push("backpacking");
-    } else if (style === "luxury" || style === "relaxation" || style === "cultural") {
-      mappedType = "leisure";
-      extraStylePrefs.push(style);
-    }
+    // Add all chosen styles as preferences so agents tailor the itinerary to all of them
+    const extraStylePrefs = styles.map(s => s);
 
     // Aggregate preferences (up to 10 items, max 50 chars each)
     const prefs = [...extraStylePrefs, ...Array.from(this.selectedChips)];
@@ -376,7 +394,7 @@ export class PlannerManager {
       travelers: payload.travelers,
       budget_total: payload.budget_total,
       budget_currency: payload.budget_currency,
-      style: this.selectedStyle,
+      styles: Array.from(this.selectedStyles),
     });
 
     this.submitBtn.disabled = true;
@@ -441,6 +459,16 @@ export class PlannerManager {
     if (cached.travelers) {
       this.travelersCount = cached.travelers;
       this.updateTravelers();
+    }
+    if (cached.styles && Array.isArray(cached.styles) && cached.styles.length > 0) {
+      this.selectedStyles = new Set(cached.styles);
+      document.querySelectorAll(".style-option").forEach((opt) => {
+        const val = opt.querySelector("input")?.value || opt.dataset.style;
+        const isSel = this.selectedStyles.has(val);
+        opt.classList.toggle("selected", isSel);
+        const cb = opt.querySelector("input[type='checkbox']");
+        if (cb) cb.checked = isSel;
+      });
     }
   }
 

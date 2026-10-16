@@ -36,10 +36,34 @@ class App {
   init() {
     this.initHeaderScroll();
     this.initMobileDrawer();
+    this.initTabs();
     this.initHashRouting();
     this.initFeaturedDestinations();
     this.initSampleTripLoader();
     this.fetchPlatformStats();
+  }
+
+  initTabs() {
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const targetId = btn.getAttribute("data-target");
+        document.querySelectorAll(".tab-btn").forEach(b => b.setAttribute("aria-selected", "false"));
+        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+        btn.setAttribute("aria-selected", "true");
+        const targetPanel = document.getElementById(targetId);
+        if (targetPanel) {
+          targetPanel.classList.add("active");
+          if (targetId === "tab-map") {
+            setTimeout(() => {
+              if (this.mapManager?.map) {
+                this.mapManager.map.invalidateSize();
+              }
+            }, 100);
+          }
+        }
+      });
+    });
   }
 
   initHeaderScroll() {

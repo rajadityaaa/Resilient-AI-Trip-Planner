@@ -89,13 +89,34 @@ export class ResultsManager {
     if (this.metaTravelers) this.metaTravelers.textContent = `${tripData.travelers || 1} traveler${(tripData.travelers || 1) > 1 ? "s" : ""}`;
     if (this.metaBudget) this.metaBudget.textContent = formatCurrency(tripData.budget_total, tripData.budget_currency);
 
+    // Reset subnav tabs to first tab (Itinerary)
+    document.querySelectorAll(".tab-btn").forEach((b, i) => b.setAttribute("aria-selected", i === 0 ? "true" : "false"));
+    document.querySelectorAll(".tab-panel").forEach((p, i) => p.classList.toggle("active", i === 0));
+
     // Fallbacks and Errors banner
     const errors = tripData.errors || [];
     if (errors.length > 0 && this.backupBanner && this.backupList) {
       this.backupBanner.classList.add("active");
       this.backupList.innerHTML = "";
       errors.forEach((err) => {
-        const msg = typeof err === "object" ? `${err.agent || "Agent"}: ${err.message}` : String(err);
+        let agentName = "";
+        let text = "";
+        if (typeof err === "object" && err !== null) {
+          agentName = err.agent || "Agent";
+          text = err.message || "";
+        } else {
+          text = String(err);
+        }
+
+        // Clean up duplicate prefix like "restaurant_agent: restaurant_agent: ..."
+        if (agentName) {
+          const rawPrefix = `${agentName}:`;
+          if (text.toLowerCase().startsWith(rawPrefix.toLowerCase())) {
+            text = text.slice(rawPrefix.length).trim();
+          }
+        }
+        const cleanAgent = agentName ? agentName.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase()) : "Agent";
+        const msg = agentName ? `${cleanAgent}: ${text}` : text;
         this.backupList.appendChild(el("li", {}, msg));
       });
     } else if (this.backupBanner) {

@@ -239,40 +239,40 @@
               <!-- Right Column: Travel Style, Activity Chips & Special Needs -->
               <div>
                 <div class="form-group">
-                  <label class="form-label">Travel Style</label>
+                  <label class="form-label">Travel Style (Select one or more)</label>
                   <div class="style-selector">
-                    <label class="style-option selected">
-                      <input type="radio" name="travel_style" value="adventure" checked>
+                    <label class="style-option selected" data-style="adventure">
+                      <input type="checkbox" name="travel_style" value="adventure" checked>
                       <span class="style-icon">⛰️</span>
                       <span class="style-label">Adventure</span>
                     </label>
-                    <label class="style-option">
-                      <input type="radio" name="travel_style" value="relaxation">
+                    <label class="style-option" data-style="relaxation">
+                      <input type="checkbox" name="travel_style" value="relaxation">
                       <span class="style-icon">🌴</span>
                       <span class="style-label">Relaxation</span>
                     </label>
-                    <label class="style-option">
-                      <input type="radio" name="travel_style" value="luxury">
+                    <label class="style-option" data-style="luxury">
+                      <input type="checkbox" name="travel_style" value="luxury">
                       <span class="style-icon">✨</span>
                       <span class="style-label">Luxury</span>
                     </label>
-                    <label class="style-option">
-                      <input type="radio" name="travel_style" value="cultural">
+                    <label class="style-option" data-style="cultural">
+                      <input type="checkbox" name="travel_style" value="cultural">
                       <span class="style-icon">🏛️</span>
                       <span class="style-label">Cultural</span>
                     </label>
-                    <label class="style-option">
-                      <input type="radio" name="travel_style" value="backpacking">
+                    <label class="style-option" data-style="backpacking">
+                      <input type="checkbox" name="travel_style" value="backpacking">
                       <span class="style-icon">🎒</span>
                       <span class="style-label">Backpacking</span>
                     </label>
-                    <label class="style-option">
-                      <input type="radio" name="travel_style" value="family">
+                    <label class="style-option" data-style="family">
+                      <input type="checkbox" name="travel_style" value="family">
                       <span class="style-icon">👨‍👩‍👧</span>
                       <span class="style-label">Family</span>
                     </label>
-                    <label class="style-option">
-                      <input type="radio" name="travel_style" value="romantic">
+                    <label class="style-option" data-style="romantic">
+                      <input type="checkbox" name="travel_style" value="romantic">
                       <span class="style-icon">🍷</span>
                       <span class="style-label">Romantic</span>
                     </label>
@@ -394,13 +394,13 @@
         <!-- Sticky Sub-Navigation Tabs -->
         <nav class="dashboard-subnav" aria-label="Itinerary Sections">
           <div class="tab-list" role="tablist">
-            <a href="#tab-itinerary" class="tab-btn" role="tab" aria-selected="true" data-target="tab-itinerary">Itinerary</a>
-            <a href="#tab-map" class="tab-btn" role="tab" aria-selected="false" data-target="tab-map">Map Overview</a>
-            <a href="#tab-hotels" class="tab-btn" role="tab" aria-selected="false" data-target="tab-hotels">Accommodations</a>
-            <a href="#tab-food" class="tab-btn" role="tab" aria-selected="false" data-target="tab-food">Dining</a>
-            <a href="#tab-weather" class="tab-btn" role="tab" aria-selected="false" data-target="tab-weather">Weather & Transit</a>
-            <a href="#tab-budget" class="tab-btn" role="tab" aria-selected="false" data-target="tab-budget">Budget Split</a>
-            <a href="#tab-assistant" class="tab-btn" role="tab" aria-selected="false" data-target="tab-assistant">Refine & Chat</a>
+            <button type="button" class="tab-btn" role="tab" aria-selected="true" data-target="tab-itinerary">Itinerary</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-map">Map Overview</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-hotels">Accommodations</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-food">Dining</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-weather">Weather & Transit</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-budget">Budget Split</button>
+            <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-assistant">Refine & Chat</button>
           </div>
         </nav>
 
@@ -745,28 +745,6 @@
       </div>
     </div>
   </footer>
-
-  <!-- Tab Controller Script for Subnav -->
-  <script>
-    document.addEventListener("DOMContentLoaded", () => {
-      document.querySelectorAll(".tab-btn").forEach((btn) => {
-        btn.addEventListener("click", (e) => {
-          e.preventDefault();
-          const targetId = btn.getAttribute("data-target");
-          document.querySelectorAll(".tab-btn").forEach(b => b.setAttribute("aria-selected", "false"));
-          document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-          btn.setAttribute("aria-selected", "true");
-          const targetPanel = document.getElementById(targetId);
-          if (targetPanel) {
-            targetPanel.classList.add("active");
-            if (targetId === "tab-map" && window.__AETHERIA_APP__?.mapManager?.map) {
-              window.__AETHERIA_APP__.mapManager.map.invalidateSize();
-            }
-          }
-        });
-      });
-    });
-  </script>
 
   <!-- ES Module Application Entrypoint -->
   <script type="module" src="js/ui.js"></script>
