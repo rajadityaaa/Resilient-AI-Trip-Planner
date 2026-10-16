@@ -12,7 +12,6 @@ Requirements covered:
 """
 from __future__ import annotations
 
-import os
 import threading
 import time
 from unittest.mock import patch
@@ -21,10 +20,9 @@ import pytest
 from fastapi.testclient import TestClient
 
 import app.db.database as db
-from app.api.jobs import Job, SqliteJobStore
+from app.api.jobs import SqliteJobStore
 from app.api.main import app
-from app.tools.cache import _FALLBACK, cache_clear, cache_get, cache_set
-
+from app.tools.cache import _FALLBACK, cache_get, cache_set
 
 # ── Fixture: Isolated temp DB per test ────────────────────────────────────────
 

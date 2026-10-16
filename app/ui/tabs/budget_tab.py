@@ -2,13 +2,12 @@
 Budget Tab UI component.
 Visualizes budget breakdown and currency exchange data using Plotly charts.
 """
-import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import streamlit as st
+
 from app.agents.state import TripState
-
-
 from app.ui.theme import get_plotly_layout_params
 
 

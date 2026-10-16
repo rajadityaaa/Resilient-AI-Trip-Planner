@@ -11,32 +11,30 @@ Each agent runs in its own worker thread with a hard timeout, so one slow API ca
 no longer stall the whole run. summary_node ALWAYS runs, even if agents logged errors.
 """
 import asyncio
-import contextvars
 from typing import Optional
-from langgraph.graph import StateGraph, START, END
 
-from app.agents.state import TripState
-from app.agents.destination_agent import suggest_destinations
-from app.agents.weather_agent import get_weather
-from app.agents.attraction_agent import get_attractions_for_trip
-from app.agents.restaurant_agent import get_restaurants_for_trip
-from app.agents.hotel_agent import get_hotels
-from app.agents.budget_agent import build_budget
-from app.agents.transport_agent import build_transport_guide
-from app.agents.packing_agent import build_packing_list
-from app.agents.currency_agent import build_currency_info
-from app.agents.summary_agent import build_summary
-from app.tools.geocode_tools import geocode_place
+from langgraph.graph import END, START, StateGraph
+
 from app.agents import progress
+from app.agents.attraction_agent import get_attractions_for_trip
+from app.agents.budget_agent import build_budget
+from app.agents.currency_agent import build_currency_info
+from app.agents.destination_agent import suggest_destinations
+from app.agents.hotel_agent import get_hotels
+from app.agents.packing_agent import build_packing_list
 from app.agents.progress import ProgressTracker, current_tracker
-
+from app.agents.restaurant_agent import get_restaurants_for_trip
+from app.agents.state import TripState
+from app.agents.summary_agent import build_summary
+from app.agents.transport_agent import build_transport_guide
+from app.agents.weather_agent import get_weather
 
 # ── Parallel execution helpers ──────────────────────────────────────────────
 # The agents are `async def` but internally use blocking `requests` / sleep calls,
 # so asyncio.gather alone would NOT overlap them. We run each agent in its own worker
 # thread (with its own event loop) so network + LLM waits genuinely overlap.
-
 from app.config import get_settings
+from app.tools.geocode_tools import geocode_place
 
 AGENT_TIMEOUT_S = get_settings().AGENT_TIMEOUT_S          # hard cap per agent so one slow API can't stall the whole run
 _OUTPUT_KEYS = {
@@ -200,7 +198,7 @@ async def plan_trip(
         initial_state["errors"] = []
 
     # Defense-in-depth: sanitize user inputs at pipeline entry
-    from app.security.sanitize import sanitize_text, sanitize_preferences
+    from app.security.sanitize import sanitize_preferences, sanitize_text
     if initial_state.get("preferences"):
         initial_state["preferences"] = sanitize_preferences(initial_state["preferences"])
     if initial_state.get("origin"):

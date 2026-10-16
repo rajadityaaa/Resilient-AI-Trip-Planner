@@ -2,9 +2,10 @@
 Map Tab UI component.
 Renders an interactive Folium map showing attractions, restaurants, and hotels.
 """
-import streamlit as st
 import folium
+import streamlit as st
 from streamlit_folium import st_folium
+
 from app.agents.state import TripState
 from app.tools.geocode_tools import geocode_place
 

@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 from functools import lru_cache
 from typing import List, Union
+
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 

@@ -11,8 +11,9 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response, SMART_MODEL
+from app.llm.factory import SMART_MODEL, clean_json_response, get_llm
 from app.llm.prompts.hotel_fallback_prompt import build_hotel_fallback_prompt
 from app.providers.registry import search_places
 from app.tools.geocode_tools import geocode_place

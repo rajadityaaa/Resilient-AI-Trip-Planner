@@ -1,5 +1,9 @@
 # ✈️ AI Travel Planner Agent
 
+[![CI Pipeline](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml/badge.svg)](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml)
+[![Coverage: >=70%](https://img.shields.io/badge/Coverage-%E2%89%A570%25-brightgreen.svg)](#running-tests)
+[![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
 A multi-agent AI trip planner that generates a full, personalized itinerary — destinations, weather, attractions, restaurants, hotels, budget, transport, packing, and currency guidance — built entirely on **free-tier APIs and LLMs**, orchestrated with **LangGraph**, and served through a custom-themed **Streamlit** UI.
 
 > Give it an origin, a destination (or leave it blank for AI suggestions), your dates, budget, and trip style — it plans the whole trip in one go, degrades gracefully when a data source fails, and never invents places it wasn't given real data for.
@@ -210,14 +214,33 @@ travel-planner-agent/
 
 ---
 
-## 🧪 Testing
+## 🧪 Running Tests
+ 
+The test suite is fully automated, deterministic, and isolated. By default, external network requests are intercepted and mocked using `fake_http` and `fake_llm` fixtures, ensuring fast, reproducible execution and reliable CI runs.
 
+### 1. Run the automated fast test suite (no external network required):
 ```bash
-# Full pipeline, no UI — fastest way to verify all 11 agents end-to-end
-python coordinator_test.py
+pytest
+```
 
-# Individual tool/agent checks
-python -m pytest tests/
+### 2. Run with test coverage and report (enforces ≥ 70% threshold):
+```bash
+pytest --cov=app --cov-report=term-missing
+```
+
+### 3. Check code style and formatting with Ruff:
+```bash
+ruff check .
+```
+
+### 4. Run opt-in live network tests:
+```bash
+pytest -m network
+```
+
+### 5. Run end-to-end coordinator standalone check:
+```bash
+python coordinator_test.py
 ```
 
 ---

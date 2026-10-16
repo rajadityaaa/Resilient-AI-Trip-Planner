@@ -20,7 +20,7 @@ from typing import Optional
 
 import requests
 
-from app.providers.base import KindType, PlacesProvider
+from app.providers.base import KindType
 from app.providers.circuit_breaker import is_circuit_open, record_failure, record_success
 from app.tools.cache import cache_get, cache_set
 

@@ -6,8 +6,6 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Optional
-
 
 # Regex patterns matching common secret formats
 _SECRET_PATTERNS = [

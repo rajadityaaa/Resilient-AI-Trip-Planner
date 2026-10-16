@@ -11,7 +11,6 @@ Strategy:
 from __future__ import annotations
 
 import asyncio
-import time
 from typing import Optional
 from unittest.mock import patch
 
@@ -178,7 +177,6 @@ async def test_unknown_job_404():
 async def test_sse_stream_done_event():
     """Submit a job via the store directly and verify the SSE stream emits 'done'."""
     with patch("app.agents.coordinator.plan_trip", side_effect=_fake_plan_trip):
-        store = _main_module._store
         manager = _main_module._manager
 
         request_dict = {

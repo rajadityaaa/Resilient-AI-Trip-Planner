@@ -2,10 +2,11 @@
 PDF Tools: Converts itinerary and trip plan into downloadable PDF using fpdf2.
 Handles Unicode / non-ASCII characters cleanly using DejaVuSans.
 """
-import os
-import requests
 from pathlib import Path
+
+import requests
 from fpdf import FPDF
+
 from app.agents.state import TripState
 
 # Font configuration

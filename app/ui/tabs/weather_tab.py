@@ -1,6 +1,7 @@
-import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit as st
+
 from app.agents.state import TripState
 from app.ui.theme import get_plotly_layout_params
 

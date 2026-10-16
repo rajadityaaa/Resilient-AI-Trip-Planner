@@ -3,9 +3,10 @@ Itinerary Tab UI component.
 Displays day-by-day itinerary inside expanders and provides a PDF download button.
 """
 import streamlit as st
+
 from app.agents.state import TripState
+from app.tools.booking_links import build_flight_booking_link, build_hotel_booking_link
 from app.tools.pdf_tools import export_itinerary_pdf
-from app.tools.booking_links import build_hotel_booking_link, build_flight_booking_link
 from app.ui.theme import render_timeline_html
 
 

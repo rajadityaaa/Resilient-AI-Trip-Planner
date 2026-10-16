@@ -17,6 +17,8 @@ import threading
 import time
 from typing import Any, Optional, Protocol, runtime_checkable
 
+from app.agents.progress import ProgressTracker
+
 logger = logging.getLogger(__name__)
 
 _JOB_TTL_S = 3600  # 1 hour

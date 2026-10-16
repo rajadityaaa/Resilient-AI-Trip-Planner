@@ -2,7 +2,6 @@
 Prompt template for Packing Agent.
 Instructs LLM to generate categorized packing list.
 """
-import json
 
 
 def build_packing_prompt(weather_summary: str, trip_type: str, preferences: list[str]) -> str:

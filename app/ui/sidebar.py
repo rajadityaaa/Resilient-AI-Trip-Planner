@@ -1,8 +1,9 @@
 """
 Sidebar UI: Input form for collecting trip details and user preferences.
 """
-from datetime import datetime, date
+from datetime import date
 from typing import Optional
+
 import streamlit as st
 
 
@@ -141,7 +142,7 @@ def render_sidebar() -> Optional[dict]:
             return None
 
         # ── Merge & Sanitize Preferences ──
-        from app.security.sanitize import sanitize_text, sanitize_preferences
+        from app.security.sanitize import sanitize_preferences, sanitize_text
 
         all_preferences = list(selected_prefs)
         if custom_prefs_input.strip():

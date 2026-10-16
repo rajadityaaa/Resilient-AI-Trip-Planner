@@ -10,19 +10,15 @@ Covers:
 """
 import io
 import logging
-import os
 from unittest.mock import patch
 
-import pytest
 from fastapi.testclient import TestClient
 
 from app.api.main import app
 from app.api.schemas import PlanRequest
-from app.config import Settings, get_settings
-from app.db import database as db
-from app.security.logging_filter import SecretMaskingFilter, install_secret_masking
+from app.config import get_settings
+from app.security.logging_filter import SecretMaskingFilter
 from app.security.sanitize import clip_strings, sanitize_preferences, sanitize_text
-
 
 client = TestClient(app)
 

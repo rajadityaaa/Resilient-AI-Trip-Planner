@@ -1,9 +1,11 @@
 """
 Weather Tools: Open-Meteo API wrapper for forecast and climate normals.
 """
-import requests
 from datetime import datetime, timedelta
 from typing import Optional
+
+import requests
+
 from app.tools.cache import cache_get, cache_set
 
 

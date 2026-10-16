@@ -37,10 +37,9 @@ from app.providers.foursquare import (
     is_daily_limit_reached,
     reset_daily_calls,
 )
-from app.providers.registry import estimate_hotel_pricing, search_places
-from app.tools.cache import _FALLBACK, cache_clear, cache_get, cache_set
-from app.tools.places_tools import _fetch_overpass_with_retry, get_attractions, get_restaurants
-
+from app.providers.registry import estimate_hotel_pricing
+from app.tools.cache import _FALLBACK, cache_clear
+from app.tools.places_tools import _fetch_overpass_with_retry, get_attractions
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -152,7 +151,6 @@ def test_foursquare_provider_success(monkeypatch):
 
 
 def test_foursquare_hotel_pricing_estimates():
-    raw_hotel = MOCK_FSQ_HOTEL_RESPONSE["results"][0]
     provider = FoursquarePlacesProvider()
     parsed = provider._parse_results(MOCK_FSQ_HOTEL_RESPONSE, "hotels")[0]
 
@@ -453,6 +451,7 @@ async def test_attraction_agent_hybrid_quality_and_deduplication(monkeypatch):
     6. Excludes parks when preferences do not mention parks/nature/outdoors.
     """
     import json
+
     from app.agents.attraction_agent import get_attractions_for_trip
 
     monkeypatch.delenv("FOURSQUARE_API_KEY", raising=False)

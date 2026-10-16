@@ -3,11 +3,15 @@ Unit tests for app.tools.places_tools and app.tools.currency_tools.
 """
 import time
 import unittest
+
+import pytest
+
 from app.tools.cache import cache_clear
-from app.tools.places_tools import get_attractions, get_restaurants, _fetch_overpass_with_retry
 from app.tools.currency_tools import convert_currency
+from app.tools.places_tools import _fetch_overpass_with_retry, get_attractions, get_restaurants
 
 
+@pytest.mark.network
 class TestPlacesAndCurrency(unittest.TestCase):
 
     def test_get_attractions_jaipur(self):

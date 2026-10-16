@@ -5,11 +5,11 @@ and ranks them using LLM against user preferences.
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 import math
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response, FAST_MODEL
+from app.llm.factory import FAST_MODEL, clean_json_response, get_llm
 from app.providers.registry import search_places
 from app.tools.geocode_tools import geocode_place
 
@@ -215,4 +215,29 @@ async def get_attractions_for_trip(state: TripState) -> TripState:
         state["errors"].append({"agent": "attraction_agent", "message": str(err)})
         state["attractions"] = []
 
+    if not state.get("attractions"):
+        state["attractions"] = _placeholder_attractions(dest)
+
     return state
+
+
+def _placeholder_attractions(dest: str) -> list[dict]:
+    dest_name = dest.title() if dest else "City"
+    return [
+        {
+            "name": f"Historic Old Town & Central Square ({dest_name})",
+            "category": "Historic Site",
+            "lat": 0.0,
+            "lon": 0.0,
+            "source": "fallback",
+            "tags": {"tourism": "attraction"},
+        },
+        {
+            "name": f"National Cultural Landmark ({dest_name})",
+            "category": "Monument",
+            "lat": 0.0,
+            "lon": 0.0,
+            "source": "fallback",
+            "tags": {"tourism": "attraction"},
+        },
+    ]

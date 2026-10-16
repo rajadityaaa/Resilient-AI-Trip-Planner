@@ -5,14 +5,13 @@ Any field that receives a placeholder is explicitly logged to state["errors"] so
 harness and Streamlit UI can surface data quality honestly.
 """
 import asyncio
-import json
 import re
-from typing import Optional
 from datetime import datetime, timedelta
-from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response, SMART_MODEL
+from typing import Optional
+
 from app.agents import progress
-from app.llm.prompts.summary_prompt import build_summary_prompt
+from app.agents.state import TripState
+from app.llm.factory import SMART_MODEL, clean_json_response, get_llm
 
 # Sentinel strings that the LLM is instructed to use (from summary_prompt.py)
 # when a data section was unavailable. We detect these to log degradation.

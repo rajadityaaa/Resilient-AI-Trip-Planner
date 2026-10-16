@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Streamlit Web Application: Main entry point for the AI Travel Planner.
@@ -8,16 +9,18 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import asyncio
 import traceback
+
 import streamlit as st
+
 from app.agents.coordinator import plan_trip
 from app.ui.sidebar import render_sidebar
-from app.ui.theme import get_custom_css, render_hero_section, render_footer_html
-from app.ui.tabs.overview_tab import render_overview_tab
-from app.ui.tabs.itinerary_tab import render_itinerary_tab
 from app.ui.tabs.budget_tab import render_budget_tab
-from app.ui.tabs.weather_tab import render_weather_tab
-from app.ui.tabs.map_tab import render_map_tab
 from app.ui.tabs.chat_tab import render_chat_tab
+from app.ui.tabs.itinerary_tab import render_itinerary_tab
+from app.ui.tabs.map_tab import render_map_tab
+from app.ui.tabs.overview_tab import render_overview_tab
+from app.ui.tabs.weather_tab import render_weather_tab
+from app.ui.theme import get_custom_css, render_footer_html, render_hero_section
 
 # Page Configuration
 st.set_page_config(page_title="AI Travel Planner & Coordinator", layout="wide")

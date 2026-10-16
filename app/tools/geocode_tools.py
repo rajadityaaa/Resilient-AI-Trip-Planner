@@ -2,8 +2,9 @@
 Geocoding Tools: Nominatim OpenStreetMap wrapper with rate-limiting and TTL caching.
 """
 import time
+
 import requests
-from typing import Optional
+
 from app.tools.cache import cache_get, cache_set
 
 _LAST_CALL_TIMESTAMP: float = 0.0

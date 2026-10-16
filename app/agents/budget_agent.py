@@ -2,10 +2,11 @@
 Budget Agent: Estimates and allocates trip budget across categories.
 Rescales category values deterministically in Python if LLM sum deviates by > 1%.
 """
-from datetime import datetime
 import json
+from datetime import datetime
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
+from app.llm.factory import clean_json_response, get_llm
 from app.llm.prompts.budget_prompt import build_budget_prompt
 
 

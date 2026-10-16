@@ -20,7 +20,6 @@ from __future__ import annotations
 import contextvars
 import threading
 import time
-from typing import Optional
 
 # ── Stage registry ──────────────────────────────────────────────────────────
 

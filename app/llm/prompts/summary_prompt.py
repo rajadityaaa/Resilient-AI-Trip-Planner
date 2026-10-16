@@ -76,7 +76,7 @@ def build_summary_prompt(state: dict) -> str:
     error_block = ""
     if errors:
         err_lines = [f"  - {e.get('agent','?')}: {e.get('message','?')}" for e in errors]
-        error_block = f"\nNOTE — The following data sources had errors (handle gracefully with 'unavailable' placeholders):\n" + "\n".join(err_lines)
+        error_block = "\nNOTE — The following data sources had errors (handle gracefully with 'unavailable' placeholders):\n" + "\n".join(err_lines)
 
     # Dynamic instructions if collections are empty/missing
     missing_instructions = []

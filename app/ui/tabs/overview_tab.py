@@ -3,6 +3,7 @@ Overview Tab UI component.
 Displays trip title, overview, key stats, and user-friendly warnings for any errors.
 """
 import streamlit as st
+
 from app.agents.state import TripState
 from app.ui.theme import render_stat_card_html
 

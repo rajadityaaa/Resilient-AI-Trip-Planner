@@ -2,8 +2,9 @@
 Packing Agent: Generates tailored packing checklist from destination weather & trip type.
 """
 import json
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
+from app.llm.factory import clean_json_response, get_llm
 from app.llm.prompts.packing_prompt import build_packing_prompt
 
 

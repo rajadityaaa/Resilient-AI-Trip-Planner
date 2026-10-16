@@ -8,8 +8,8 @@ from datetime import date
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator, model_validator
-from app.security.sanitize import sanitize_text, sanitize_preferences
 
+from app.security.sanitize import sanitize_preferences, sanitize_text
 
 TRIP_TYPES = Literal["leisure", "business", "adventure", "family", "solo", "romantic"]
 

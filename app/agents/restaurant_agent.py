@@ -5,8 +5,9 @@ and ranks best matches using LLM.
 from __future__ import annotations
 
 import json
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
+from app.llm.factory import clean_json_response, get_llm
 from app.llm.prompts.restaurant_ranking_prompt import build_restaurant_ranking_prompt
 from app.providers.registry import search_places
 from app.tools.geocode_tools import geocode_place
@@ -19,8 +20,8 @@ def _init_errors(state: TripState):
 
 def _ai_place_fallback(kind: str, dest: str, prefs: list, geo: dict) -> list:
     """Providers returned nothing -> ask the LLM for well-known real places. Flagged as AI-suggested."""
-    from app.llm.prompts.place_fallback_prompt import build_place_fallback_prompt
     from app.llm.factory import SMART_MODEL
+    from app.llm.prompts.place_fallback_prompt import build_place_fallback_prompt
     llm = get_llm(model=SMART_MODEL, max_tokens=1800)
     prompt = build_place_fallback_prompt(kind, dest, prefs, geo["lat"], geo["lon"])
     items = clean_json_response(llm(prompt))
@@ -203,4 +204,29 @@ async def get_restaurants_for_trip(state: TripState) -> TripState:
         state["errors"].append({"agent": "restaurant_agent", "message": str(err)})
         state["restaurants"] = []
 
+    if not state.get("restaurants"):
+        state["restaurants"] = _placeholder_restaurants(dest)
+
     return state
+
+
+def _placeholder_restaurants(dest: str) -> list[dict]:
+    dest_name = dest.title() if dest else "City"
+    return [
+        {
+            "name": f"Heritage Dining Room ({dest_name})",
+            "category": "Restaurant",
+            "lat": 0.0,
+            "lon": 0.0,
+            "source": "fallback",
+            "tags": {"amenity": "restaurant"},
+        },
+        {
+            "name": f"Old Town Artisan Bistro ({dest_name})",
+            "category": "Cafe",
+            "lat": 0.0,
+            "lon": 0.0,
+            "source": "fallback",
+            "tags": {"amenity": "cafe"},
+        },
+    ]
