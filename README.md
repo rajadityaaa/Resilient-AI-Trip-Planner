@@ -225,6 +225,19 @@ The system includes end-to-end observability across the backend, coordinator, an
 
 ---
 
+## 📄 PDF Fonts & Multi-Language Support
+
+The PDF export engine (`app/tools/pdf_tools.py`) uses `fpdf2` with text shaping (`uharfbuzz`) and Google Noto Sans fonts to accurately render non-Latin scripts:
+
+- **Font Location**: Fonts are stored in `app/resources/fonts/` and distributed under the **SIL Open Font License (OFL)**:
+  - `NotoSans-Regular.ttf` / `NotoSans-Bold.ttf` (Latin & universal base font)
+  - `NotoSansThai-Regular.ttf` / `NotoSansThai-Bold.ttf` (Thai script)
+  - `NotoSansDevanagari-Regular.ttf` / `NotoSansDevanagari-Bold.ttf` (Devanagari / Hindi script)
+- **Supported Scripts**: Full Latin, Thai (with vowel/tone marks and unbroken wrapping), and Devanagari (with conjunct ligatures).
+- **Unsupported Scripts & Emojis**: CJK scripts (Chinese/Japanese/Korean) are not bundled to keep repository size compact; unrepresented glyphs are cleanly replaced with `?`. Common UI emojis are mapped to descriptive bracketed text (`[Hotel]`, `[Attraction]`, etc.) to prevent font glyph warnings.
+
+---
+
 ## 🧪 Running Tests
  
 The test suite is fully automated, deterministic, and isolated. By default, external network requests are intercepted and mocked using `fake_http` and `fake_llm` fixtures, ensuring fast, reproducible execution and reliable CI runs.

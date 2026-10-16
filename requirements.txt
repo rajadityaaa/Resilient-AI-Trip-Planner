@@ -7,7 +7,9 @@ requests>=2.31.0
 folium>=0.16.0
 streamlit-folium>=0.20.0
 plotly>=5.22.0
-fpdf2>=2.7.9
+fpdf2>=2.8.0
+uharfbuzz>=0.40.0
+pypdf>=4.0.0
 pandas>=2.2.0
 # Step 1: FastAPI backend
 fastapi>=0.110.0
