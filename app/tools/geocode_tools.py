@@ -42,12 +42,30 @@ def geocode_place(place_name: str) -> dict:
     if not place_name or not place_name.strip():
         raise GeocodeNotFoundError("Place name cannot be empty.")
 
-    clean_name = place_name.strip().lower()
+    raw_clean = place_name.strip().lower()
+    COMMON_ALIASES = {
+        "kashmir": "Jammu and Kashmir, India",
+        "kashmir valley": "Jammu and Kashmir, India",
+        "kashmir, india": "Jammu and Kashmir, India",
+        "ladakh": "Ladakh, India",
+        "goa": "Goa, India",
+        "bali": "Bali, Indonesia",
+        "santorini": "Santorini, Greece",
+        "swiss alps": "Swiss Alps, Switzerland",
+        "amalfi": "Amalfi Coast, Italy",
+        "hawaii": "Hawaii, USA",
+    }
+    resolved_query = COMMON_ALIASES.get(raw_clean, place_name.strip())
+    clean_name = resolved_query.strip().lower()
     cache_key = f"geocode:{clean_name}"
 
     cached = cache_get(cache_key)
     if cached is not None:
-        return cached
+        # Guard against any stale/accidental Barmer Rajasthan match for Kashmir
+        if "kashmir" in raw_clean and "barmer" in str(cached.get("display_name", "")).lower():
+            pass
+        else:
+            return cached
 
     # Enforce minimum 1-second gap between network API requests
     global _LAST_CALL_TIMESTAMP
@@ -61,11 +79,11 @@ def geocode_place(place_name: str) -> dict:
         "Accept-Language": "en"
     }
     params = {
-        "q": place_name.strip(),
+        "q": resolved_query,
         "format": "json",
         "addressdetails": 1,
         "accept-language": "en",
-        "limit": 1
+        "limit": 5
     }
 
     try:
@@ -80,6 +98,18 @@ def geocode_place(place_name: str) -> dict:
     if not data or not isinstance(data, list):
         raise GeocodeNotFoundError(f"No geocoding results found for '{place_name}'.")
 
+    # Prioritize regions, states, and cities over tiny hamlets/villages with accidental name collisions
+    def _rank_candidate(cand: dict) -> float:
+        importance = float(cand.get("importance", 0) or 0)
+        atype = str(cand.get("addresstype", "")).lower()
+        cls = str(cand.get("class", "")).lower()
+        if atype in ("state", "region", "province", "city", "administrative") or cls == "boundary":
+            importance += 0.5
+        elif atype in ("hamlet", "isolated_dwelling"):
+            importance -= 0.3
+        return importance
+
+    data.sort(key=_rank_candidate, reverse=True)
     item = data[0]
     try:
         lat = float(item["lat"])

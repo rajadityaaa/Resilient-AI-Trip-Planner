@@ -12,7 +12,7 @@
 import { PlannerManager } from "./planner.js";
 import { ProgressManager } from "./progress.js";
 import { ResultsManager } from "./results.js";
-import { MapManager } from "./map.js?v=3";
+import { MapManager } from "./map.js?v=5";
 import { AssistantManager } from "./assistant.js?v=3";
 import { TripsManager } from "./trips.js";
 import { API } from "./api.js";
@@ -47,8 +47,28 @@ class PlannerApp {
     this.setupWizardNav();
     this.parseQueryParams();
     this.setupSummaryCardUpdater();
+    this.setupTabs();
     this.setupHashRouter();
     this.initSampleExpeditionButton();
+  }
+
+  setupTabs() {
+    document.querySelectorAll(".tab-btn").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const targetId = btn.getAttribute("data-target");
+        document.querySelectorAll(".tab-btn").forEach((b) => b.setAttribute("aria-selected", "false"));
+        document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+        btn.setAttribute("aria-selected", "true");
+        const targetPanel = document.getElementById(targetId);
+        if (targetPanel) {
+          targetPanel.classList.add("active");
+          if (targetId === "tab-map") {
+            this.mapManager?.onTabVisible();
+          }
+        }
+      });
+    });
   }
 
   /**
