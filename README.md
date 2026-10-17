@@ -238,6 +238,124 @@ The PDF export engine (`app/tools/pdf_tools.py`) uses `fpdf2` with text shaping 
 
 ---
 
+## 🚢 Deployment & Production Operations
+
+The application is containerized with a multi-stage Docker build and optimized for deployment as a single web service on **Render's Free Tier** (Docker runtime, Singapore region, 512 MB RAM limit).
+
+### 🐳 Local Docker Usage
+
+#### 1. Build the production image (FastAPI API + static web UI):
+```bash
+docker build -t ai-travel-planner .
+```
+
+#### 2. Run the container locally:
+```bash
+docker run -d --name travel-planner \
+  -p 8000:8000 \
+  -e GROQ_API_KEY="your_groq_key" \
+  -e ENV="production" \
+  ai-travel-planner
+```
+Access the application at `http://localhost:8000/`.
+
+#### 3. Using Docker Compose:
+```bash
+# Start production API web service
+docker compose up --build
+
+# Optional: Start local Streamlit dashboard alongside API
+docker compose --profile streamlit up
+```
+
+---
+
+### 🌐 Deploying on Render
+
+#### Option A: Render Blueprint (Recommended)
+1. Fork or push this repository to GitHub.
+2. In the [Render Dashboard](https://dashboard.render.com), navigate to **Blueprints** → **New Blueprint Instance**.
+3. Connect your repository. Render automatically reads [render.yaml](render.yaml), configuring:
+   - **Service Name**: `ai-travel-planner`
+   - **Runtime**: `docker`
+   - **Plan**: `free`
+   - **Region**: `singapore`
+   - **Health Check Path**: `/health`
+4. When prompted by Render, set your secret environment variables (`GROQ_API_KEY`, optional `OPENROUTER_API_KEY`, and optional `FOURSQUARE_API_KEY`).
+5. Click **Apply**. Render will build and deploy the container automatically.
+
+#### Option B: Manual Web Service Creation
+1. Click **New +** → **Web Service** in Render.
+2. Connect your Git repository.
+3. Configure the following settings:
+   - **Runtime**: `Docker`
+   - **Region**: `Singapore` (or region closest to your target audience)
+   - **Instance Type**: `Free`
+   - **Health Check Path**: `/health`
+   - **Auto-Deploy**: `Yes`
+4. Add the environment variables listed in the configuration table below.
+
+---
+
+### ⚙️ Environment Variables Reference
+
+| Variable | Required? | Default | Description |
+|---|:---:|:---:|---|
+| `GROQ_API_KEY` | **Yes** | `""` | Primary LLM inference (Llama-3.3-70b-versatile). Kept secret. |
+| `OPENROUTER_API_KEY` | Optional | `""` | Fallback LLM provider when Groq rate limits are reached. |
+| `FOURSQUARE_API_KEY` | Optional | `""` | Places enrichment (falls back to Overpass if unset). |
+| `ENV` | Optional | `development` | Set to `production` on Render to disable `/api/trips` and enforce security headers. |
+| `TRUST_PROXY` | Optional | `false` (dev) / `true` (prod) | When `true`, rate limiter extracts real client IP from left-most `X-Forwarded-For`. |
+| `PORT` | Optional | `8000` | HTTP listening port (automatically set by Render in production). |
+| `RATE_LIMIT_PER_MIN` | Optional | `5` (dev) / `10` (prod) | SlowAPI client IP rate limit threshold per minute. |
+| `DAILY_JOB_LIMIT` | Optional | `100` | Daily limit on trip planning jobs to prevent API quota exhaustion. |
+| `DATABASE_URL` | Optional | `data/travel.db` | SQLite database file location (automatically falls back to `/tmp` if non-writable). |
+| `CORS_ORIGINS` | Optional | Localhost defaults | Comma-separated list or JSON array of allowed origins for cross-origin requests. |
+
+---
+
+### ⏳ Free-Tier Limits & Operational Behavior
+
+Render's free tier provides an excellent testing ground, but operates under strict architectural constraints:
+
+1. **Idle Spin-Down**: The container spins down after **15 minutes of inactivity**. The first incoming request will trigger a cold-start spin-up taking ~30 to 60 seconds.
+2. **Ephemeral Filesystem**: The disk is wiped upon container restart or redeployment. Cached places and saved trips are ephemeral on the free tier.
+3. **512 MB RAM Ceiling**: The service operates within 512 MB memory. The container is strictly configured with a single Uvicorn worker and slim production dependencies (`requirements-prod.txt`), keeping baseline RSS memory ~70–120 MB and peak usage well below 250 MB.
+4. **No Uptime SLA**: Free instances do not include uptime guarantees or persistent background workers.
+
+#### ☕ Warming the Service Before a Demo
+To prevent demo delays caused by cold starts, send an HTTP request to the health probe 2–3 minutes before presenting:
+```bash
+curl -I https://<your-app>.onrender.com/health
+```
+
+---
+
+### 🔍 Automated Smoke Testing
+
+Validate deployment health, security headers, and end-to-end trip planning with the built-in standard library smoke test:
+
+```bash
+# Basic check: verifies /health, /, /plan/, /api/stats, /docs, and security headers
+python scripts/smoke_test.py https://<your-app>.onrender.com
+
+# Full end-to-end test: submits a 2-day Bangkok plan and validates daily itineraries
+python scripts/smoke_test.py https://<your-app>.onrender.com --plan
+```
+
+The smoke test automatically polls `/health` for up to 90 seconds to handle free-tier cold starts before executing validations.
+
+---
+
+### 🛠️ Deployment Troubleshooting
+
+- **502 Bad Gateway on first load**: The container is still spinning up from idle sleep. Wait 30–60 seconds and refresh, or run `python scripts/smoke_test.py <url>`.
+- **429 Too Many Requests**: You have exceeded the per-minute rate limit (`RATE_LIMIT_PER_MIN`) or global daily quota (`DAILY_JOB_LIMIT`). Wait 60 seconds before retrying.
+- **Docker build timeout / failure**: Ensure the repository uses the multi-stage Dockerfile and `requirements-prod.txt`. Dev packages (`streamlit`, `plotly`, `pytest`) are excluded to avoid building heavy wheels.
+- **Groq API Rate Limit or 502**: Ensure `OPENROUTER_API_KEY` is configured as a fallback in Render environment variables.
+
+---
+
 ## 🧪 Running Tests
  
 The test suite is fully automated, deterministic, and isolated. By default, external network requests are intercepted and mocked using `fake_http` and `fake_llm` fixtures, ensuring fast, reproducible execution and reliable CI runs.

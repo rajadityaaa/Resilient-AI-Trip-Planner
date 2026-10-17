@@ -5,8 +5,9 @@ Loads environment variables from .env and system environment with safe defaults.
 from __future__ import annotations
 
 import json
+import os
 from functools import lru_cache
-from typing import List, Union
+from typing import Any, List, Union
 
 from pydantic import SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -51,6 +52,16 @@ class Settings(BaseSettings):
     DAILY_JOB_LIMIT: int = 100
     PORT: int = 8000
     ENABLE_METRICS: bool = False
+    TRUST_PROXY: bool = False
+
+    def model_post_init(self, __context: Any) -> None:
+        super().model_post_init(__context)
+        # Default TRUST_PROXY to True in production unless explicitly set in environment
+        raw_env_trust = os.getenv("TRUST_PROXY")
+        if raw_env_trust is None:
+            self.TRUST_PROXY = (self.ENV == "production")
+        else:
+            self.TRUST_PROXY = raw_env_trust.strip().lower() in ("true", "1", "yes", "t")
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod

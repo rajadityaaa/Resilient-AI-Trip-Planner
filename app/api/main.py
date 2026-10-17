@@ -29,8 +29,9 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 from sse_starlette.sse import EventSourceResponse
+from starlette.middleware.gzip import GZipMiddleware
+from starlette.types import ASGIApp, Receive, Scope, Send
 
 from app.api.jobs import (
     JobManager,
@@ -41,6 +42,7 @@ from app.api.schemas import ChatRequest, ChatResponse, ErrorResponse, JobStatus,
 from app.config import get_settings
 from app.db import database as db
 from app.observability.logging import configure_logging, current_request_id
+from app.security.client_ip import get_client_ip
 from app.security.sanitize import sanitize_text
 
 logger = logging.getLogger(__name__)
@@ -58,19 +60,36 @@ _store, _manager = create_sqlite_job_manager()
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):
-    """Initialize SQLite database and shared state on startup."""
+    """Initialize SQLite database, report configured providers, and shared state on startup."""
     global _store, _manager
     configure_logging()
     db.init_db()
     _store, _manager = create_sqlite_job_manager()
-    logger.info("Travel Planner API started (SQLite persistence enabled).")
+
+    settings = get_settings()
+    has_groq = bool(settings.GROQ_API_KEY.get_secret_value().strip() or os.getenv("GROQ_API_KEY", "").strip())
+    has_openrouter = bool(settings.OPENROUTER_API_KEY.get_secret_value().strip() or os.getenv("OPENROUTER_API_KEY", "").strip())
+    has_foursquare = bool(settings.FOURSQUARE_API_KEY.get_secret_value().strip() or os.getenv("FOURSQUARE_API_KEY", "").strip())
+
+    configured = []
+    if has_groq:
+        configured.append("Groq")
+    if has_openrouter:
+        configured.append("OpenRouter")
+    if has_foursquare:
+        configured.append("Foursquare")
+
+    logger.info(f"Configured external providers: {', '.join(configured) if configured else 'None'}")
+    logger.info(
+        f"Travel Planner API started (env={settings.ENV}, trust_proxy={settings.TRUST_PROXY}, SQLite persistence enabled)."
+    )
     yield
     logger.info("Travel Planner API shutting down.")
 
 
 # ── Limiter instance ─────────────────────────────────────────────────────────
 
-limiter = Limiter(key_func=get_remote_address, default_limits=[])
+limiter = Limiter(key_func=get_client_ip, default_limits=[])
 
 # ── App instance ─────────────────────────────────────────────────────────────
 
@@ -94,6 +113,26 @@ async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
         content={"error": f"Rate limit exceeded: {exc.detail}"},
         headers={"Retry-After": "60"},
     )
+
+# ── Compression Middleware (excluding SSE) ───────────────────────────────────
+
+class SafeGZipMiddleware:
+    """GZip middleware that skips Server-Sent Events (SSE) to prevent buffering."""
+
+    def __init__(self, app: ASGIApp, minimum_size: int = 1000):
+        self.app = app
+        self.gzip_app = GZipMiddleware(app, minimum_size=minimum_size)
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] == "http":
+            path = scope.get("path", "")
+            if path.startswith("/api/plan/") and path.endswith("/events"):
+                await self.app(scope, receive, send)
+                return
+        await self.gzip_app(scope, receive, send)
+
+
+app.add_middleware(SafeGZipMiddleware, minimum_size=1000)
 
 # ── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -156,8 +195,22 @@ async def _security_and_request_id_middleware(request: Request, call_next):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
 
-        # 5. Content-Security-Policy header ONLY for static site responses
+        # 5. Cache-Control policy:
+        # - SSE: no-cache, no buffering
+        # - HTML pages: no-cache, must-revalidate
+        # - Static assets (CSS/JS/images/fonts): long-lived cache
         path = request.url.path
+        if path.startswith("/api/plan") and path.endswith("/events"):
+            response.headers["Cache-Control"] = "no-cache"
+            response.headers["X-Accel-Buffering"] = "no"
+        elif path.endswith(".html") or path in ("/", "/plan", "/plan/"):
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
+        elif any(path.endswith(ext) for ext in (".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".webp", ".woff", ".woff2", ".ttf", ".ico")):
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+
+        # 6. Content-Security-Policy header ONLY for static site responses
         if not (path.startswith("/api") or path in ("/docs", "/redoc", "/openapi.json", "/health", "/metrics")):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
@@ -334,7 +387,14 @@ async def plan_events(job_id: str, request: Request):
 
             await asyncio.sleep(poll_interval)
 
-    return EventSourceResponse(_event_generator())
+    return EventSourceResponse(
+        _event_generator(),
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 # ── Trip Endpoints (Step 2) ───────────────────────────────────────────────────

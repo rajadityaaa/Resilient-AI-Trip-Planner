@@ -1,0 +1,47 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Git & CI
+.git/
+.github/
+
+# Environment variables & secrets (NEVER include in images)
+.env
+.env.*
+!.env.example
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+
+# Local databases and logs
+data/*.db*
+data/*.db-wal*
+data/*.db-shm*
+*.log
+*.tmp
+*.temp
+
+# Test suite & coverage (not needed in runtime container)
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# IDE & Editor files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Large media / sources
+node_modules/
+app/web/assets/video/source/
+app/web/assets/video/source/**

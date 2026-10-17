@@ -16,6 +16,7 @@ import logging
 import os
 import secrets
 import sqlite3
+import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -31,14 +32,22 @@ _INITIALIZED_PATHS: set[str] = set()
 
 
 def _db_path() -> Path:
-    """Resolve the DB file path, creating the parent directory if needed."""
+    """Resolve the DB file path, creating the parent directory if needed, with tempdir fallback."""
     from app.config import get_settings
     raw = os.getenv("DATABASE_URL") or get_settings().DATABASE_URL
     if raw.startswith("sqlite:///"):
         raw = raw[len("sqlite:///"):]
     p = Path(raw)
-    p.parent.mkdir(parents=True, exist_ok=True)
-    return p
+    try:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        return p
+    except (PermissionError, OSError) as exc:
+        fallback = Path(tempfile.gettempdir()) / "travel_fallback.db"
+        logger.warning(
+            f"[DB] Primary database directory '{p.parent}' is not writable ({exc}). "
+            f"Falling back to temporary storage at '{fallback}'."
+        )
+        return fallback
 
 
 # ── DDL / migrations ──────────────────────────────────────────────────────────
@@ -49,9 +58,19 @@ def init_db() -> None:
     Safe to call multiple times (idempotent).
     """
     p = _db_path()
-    conn = sqlite3.connect(str(p), timeout=_BUSY_TIMEOUT_MS / 1000)
+    try:
+        conn = sqlite3.connect(str(p), timeout=_BUSY_TIMEOUT_MS / 1000)
+    except (sqlite3.OperationalError, sqlite3.DatabaseError, OSError) as exc:
+        fallback = Path(tempfile.gettempdir()) / "travel_fallback.db"
+        logger.warning(f"[DB] Cannot connect to '{p}' ({exc}). Switching to fallback '{fallback}'.")
+        p = fallback
+        conn = sqlite3.connect(str(p), timeout=_BUSY_TIMEOUT_MS / 1000)
+
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+    except Exception:
+        pass
     conn.execute(f"PRAGMA busy_timeout={_BUSY_TIMEOUT_MS}")
     try:
         conn.execute(
@@ -109,21 +128,33 @@ def _connect() -> Generator[sqlite3.Connection, None, None]:
     p_str = str(p.resolve())
     if p_str not in _INITIALIZED_PATHS:
         init_db()
+        p = _db_path()
+        p_str = str(p.resolve())
         _INITIALIZED_PATHS.add(p_str)
 
     try:
         conn = sqlite3.connect(str(p), timeout=_BUSY_TIMEOUT_MS / 1000)
-        conn.row_factory = sqlite3.Row
+    except (sqlite3.OperationalError, sqlite3.DatabaseError, OSError) as exc:
+        fallback = Path(tempfile.gettempdir()) / "travel_fallback.db"
+        logger.warning(f"[DB] Failed to connect to '{p}' ({exc}). Retrying with fallback '{fallback}'.")
+        p = fallback
+        p_str = str(p.resolve())
+        if p_str not in _INITIALIZED_PATHS:
+            init_db()
+            _INITIALIZED_PATHS.add(p_str)
+        conn = sqlite3.connect(str(p), timeout=_BUSY_TIMEOUT_MS / 1000)
+
+    conn.row_factory = sqlite3.Row
+    try:
         conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute(f"PRAGMA busy_timeout={_BUSY_TIMEOUT_MS}")
-        conn.execute("PRAGMA foreign_keys=ON")
-        try:
-            yield conn
-        finally:
-            conn.close()
-    except Exception as exc:
-        logger.error(f"[DB] Failed to open SQLite connection: {exc}")
-        raise
+    except Exception:
+        pass
+    conn.execute(f"PRAGMA busy_timeout={_BUSY_TIMEOUT_MS}")
+    conn.execute("PRAGMA foreign_keys=ON")
+    try:
+        yield conn
+    finally:
+        conn.close()
 
 
 # ── Cache helpers ─────────────────────────────────────────────────────────────
