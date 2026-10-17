@@ -151,7 +151,9 @@ export const API = {
           const status = await API.getPlanStatus(jobId);
           if (status.status === "done") {
             stop();
-            onDone(status.result);
+            const res = status.result || {};
+            if (!res.id) res.id = status.job_id || jobId;
+            onDone(res);
           } else if (status.status === "failed") {
             stop();
             onError(status.error || "Trip planning failed.");
@@ -185,7 +187,10 @@ export const API = {
         stop();
         try {
           const data = JSON.parse(e.data);
-          onDone(data.result);
+          const res = data.result || {};
+          if (!res.id) res.id = data.job_id || jobId;
+          if (data.share_slug && !res.share_slug) res.share_slug = data.share_slug;
+          onDone(res);
         } catch (err) {
           onError("Could not parse trip results.");
         }

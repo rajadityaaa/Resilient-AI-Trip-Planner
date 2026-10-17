@@ -190,6 +190,9 @@ class SqliteJobStore:
                 created_at=job.created_at,
             )
             job.share_slug = slug
+            if job.result and isinstance(job.result, dict):
+                job.result["id"] = job.job_id
+                job.result["share_slug"] = slug
         except Exception as exc:
             logger.error(f"[SqliteJobStore] Failed to persist job {job.job_id}: {exc}")
 
@@ -197,6 +200,8 @@ class SqliteJobStore:
         from app.db import database as db
         try:
             row = db.get_trip(job_id)
+            if row is None:
+                row = db.get_trip_by_slug(job_id)
             if row is None:
                 return None
             return self._row_to_job(row)
@@ -289,6 +294,8 @@ class JobManager:
         try:
             result = await plan_trip(job.request, progress_tracker=tracker)
             job.status = "done"
+            if result and isinstance(result, dict):
+                result["id"] = job.job_id
             job.result = result
             logger.info(f"[JobManager] Job {job.job_id} completed successfully.")
         except Exception as exc:

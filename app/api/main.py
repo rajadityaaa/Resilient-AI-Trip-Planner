@@ -25,7 +25,7 @@ from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
@@ -163,7 +163,7 @@ async def _security_and_request_id_middleware(request: Request, call_next):
                 "default-src 'self'; "
                 "script-src 'self'; "
                 "style-src 'self' 'unsafe-inline'; "
-                "img-src 'self' data: https://*.tile.openstreetmap.org https://images.unsplash.com; "
+                "img-src 'self' data: https://*.tile.openstreetmap.org https://*.basemaps.cartocdn.com https://server.arcgisonline.com https://images.unsplash.com; "
                 "font-src 'self' data:; "
                 "connect-src 'self'; "
                 "frame-ancestors 'none';"
@@ -188,13 +188,19 @@ async def _generic_exc_handler(request: Request, exc: Exception):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _job_to_status(job) -> JobStatus:
+    res = job.result
+    if res and isinstance(res, dict):
+        if not res.get("id"):
+            res["id"] = job.job_id
+        if not res.get("share_slug") and job.share_slug:
+            res["share_slug"] = job.share_slug
     return JobStatus(
         job_id=job.job_id,
         status=job.status,
         created_at=job.created_at,
         started_at=job.started_at,
         finished_at=job.finished_at,
-        result=job.result,
+        result=res,
         error=job.error,
     )
 
@@ -310,9 +316,13 @@ async def plan_events(job_id: str, request: Request):
 
             # --- Terminal events ---
             if current_job and current_job.status == "done":
+                res = dict(current_job.result) if current_job.result else {}
+                res["id"] = job_id
+                if current_job.share_slug:
+                    res["share_slug"] = current_job.share_slug
                 yield {
                     "event": "done",
-                    "data": json.dumps({"job_id": job_id, "result": current_job.result}),
+                    "data": json.dumps({"job_id": job_id, "result": res}),
                 }
                 break
             elif current_job and current_job.status == "failed":
@@ -470,7 +480,16 @@ async def chat_endpoint(request: Request, body: ChatRequest):
         job = _store.get(body.trip_id_or_slug)
         if job and job.result:
             trip = {"result": job.result}
-        else:
+        elif body.trip_id_or_slug in ("sample-kyoto", "sample"):
+            import os
+            sample_path = os.path.join(os.path.dirname(__file__), "..", "web", "data", "sample-trip.json")
+            if os.path.exists(sample_path):
+                try:
+                    with open(sample_path, "r", encoding="utf-8") as f:
+                        trip = {"result": json.load(f)}
+                except Exception as exc:
+                    logger.warning(f"Could not load sample trip for chat: {exc}")
+        if not trip:
             raise HTTPException(status_code=404, detail="Trip not found.")
 
     user_msg = sanitize_text(body.message.strip())
@@ -559,6 +578,13 @@ async def health():
         "env": settings.ENV,
         "llm_key_configured": has_groq or has_openrouter,
     }
+
+
+# ── Plan Canonical Redirect ──────────────────────────────────────────────────
+@app.get("/plan", include_in_schema=False)
+async def plan_redirect():
+    """Redirect /plan to canonical /plan/ directory."""
+    return RedirectResponse(url="/plan/", status_code=307)
 
 
 # ── Unknown /api paths return JSON 404 (never index.html) ─────────────────────

@@ -28,7 +28,8 @@ export class AssistantManager {
   }
 
   setTrip(trip) {
-    this.currentTripIdOrSlug = trip?.share_slug || trip?.id;
+    this.currentTrip = trip;
+    this.currentTripIdOrSlug = trip?.share_slug || trip?.id || trip?.job_id;
     if (this.container) {
       this.container.innerHTML = "";
       this.appendMessage("assistant", `Hello! I'm your travel assistant for your trip to ${trip?.destination || "your destination"}. Ask me for adjustments, pacing questions, or dining recommendations.`);
@@ -68,7 +69,13 @@ export class AssistantManager {
     const query = this.input?.value?.trim();
     if (!query) return;
 
-    if (!this.currentTripIdOrSlug) {
+    let targetTripId = this.currentTripIdOrSlug;
+    if (!targetTripId && this.currentTrip) {
+      targetTripId = this.currentTrip.share_slug || this.currentTrip.id || this.currentTrip.job_id || "sample-kyoto";
+      this.currentTripIdOrSlug = targetTripId;
+    }
+
+    if (!targetTripId) {
       showToast("Please plan or open a trip first.", "info");
       return;
     }

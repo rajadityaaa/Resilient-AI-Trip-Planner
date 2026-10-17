@@ -37,6 +37,65 @@ def test_root_returns_html_index():
     assert "<!DOCTYPE html>" in response.text
 
 
+def test_plan_page_and_redirect():
+    # 1. /plan redirects to /plan/
+    res_redirect = client.get("/plan", follow_redirects=False)
+    assert res_redirect.status_code in (301, 302, 307, 308)
+    assert res_redirect.headers.get("location") == "/plan/"
+
+    # 2. /plan/ returns 200 text/html
+    res_plan = client.get("/plan/")
+    assert res_plan.status_code == 200
+    assert "text/html" in res_plan.headers.get("content-type", "")
+    assert "Autonomous Journey Engine" in res_plan.text
+    assert "<!DOCTYPE html>" in res_plan.text
+
+
+def test_no_video_tags_anywhere():
+    """Enforce strict rule: Zero video tags anywhere in web templates."""
+    for html_file in WEB_DIR.rglob("*.html"):
+        content = html_file.read_text(encoding="utf-8")
+        assert "<video" not in content.lower(), f"Prohibited <video> tag found in {html_file.name}"
+
+
+def test_landing_page_budget():
+    """Ensure landing page HTML+CSS+JS transfer budget <= 150 KB (excluding images)."""
+    index_path = WEB_DIR / "index.html"
+    assert index_path.exists()
+    html_size = index_path.stat().st_size
+
+    # Linked CSS and JS on landing page
+    linked_css_size = sum(f.stat().st_size for f in [
+        WEB_DIR / "css" / "tokens.css",
+        WEB_DIR / "css" / "base.css",
+        WEB_DIR / "css" / "layout.css",
+        WEB_DIR / "css" / "components.css",
+        WEB_DIR / "css" / "sections" / "hero.css",
+        WEB_DIR / "css" / "landing.css",
+    ] if f.exists())
+
+    linked_js_size = sum(f.stat().st_size for f in [
+        WEB_DIR / "js" / "landing.js",
+    ] if f.exists())
+
+    total_bundle = html_size + linked_css_size + linked_js_size
+    assert total_bundle <= 150 * 1024, f"Landing bundle exceeds 150 KB budget: {total_bundle / 1024:.1f} KB"
+
+
+def test_all_plan_buttons_point_to_plan():
+    """Every 'Plan my trip' or planning button on landing page must link to /plan/."""
+    index_path = WEB_DIR / "index.html"
+    content = index_path.read_text(encoding="utf-8")
+    
+    # Check all <a ...> tags containing 'plan'
+    a_regex = re.compile(r'<a\s+[^>]*href=["\']([^"\']+)["\'][^>]*>(.*?)</a>', re.IGNORECASE | re.DOTALL)
+    for match in a_regex.finditer(content):
+        href = match.group(1)
+        text = match.group(2)
+        if "plan" in text.lower():
+            assert href.startswith("/plan/"), f"Planning button has invalid href '{href}' in text '{text.strip()}'"
+
+
 def test_docs_and_health_remain_functional():
     res_health = client.get("/health")
     assert res_health.status_code == 200
@@ -221,8 +280,27 @@ def test_index_html_static_integrity():
     # 2. Confirm all referenced local files exist on disk
     for rel_path in parser.local_links:
         clean_path = rel_path.split("?")[0].split("#")[0]
-        full_path = WEB_DIR / clean_path
+        full_path = (WEB_DIR / clean_path).resolve()
         assert full_path.exists(), f"Referenced asset does not exist: {rel_path} (looked at {full_path})"
+
+
+def test_plan_html_static_integrity():
+    plan_index_path = WEB_DIR / "plan" / "index.html"
+    assert plan_index_path.exists(), "app/web/plan/index.html must exist."
+
+    html_content = plan_index_path.read_text(encoding="utf-8")
+    parser = StaticResourceExtractor()
+    parser.feed(html_content)
+
+    # 1. Confirm zero external CDN scripts
+    assert len(parser.external_scripts) == 0, f"Found prohibited external CDN scripts in /plan/: {parser.external_scripts}"
+
+    # 2. Confirm all referenced local files exist on disk
+    doc_dir = WEB_DIR / "plan"
+    for rel_path in parser.local_links:
+        clean_path = rel_path.split("?")[0].split("#")[0]
+        full_path = (doc_dir / clean_path).resolve()
+        assert full_path.exists(), f"Referenced asset in /plan/ does not exist: {rel_path} (looked at {full_path})"
 
 
 def test_css_url_integrity():
