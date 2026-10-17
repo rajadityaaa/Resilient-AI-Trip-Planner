@@ -1,6 +1,6 @@
 # ✈️ AI Travel Planner Agent (Aetheria)
 
-[![CI Pipeline](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml/badge.svg?branch=feature/production-upgrade)](https://github.com/rajadityaaa/Travel-Planner-Agent/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/rajadityaaa/Resilient-AI-Trip-Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/rajadityaaa/Resilient-AI-Trip-Planner/actions/workflows/ci.yml)
 [![Live Demo on Render](https://img.shields.io/badge/Demo-Live%20on%20Render-46E3B7?style=flat&logo=render&logoColor=white)](https://ai-travel-planner-fi31.onrender.com)
 [![Coverage: >=70%](https://img.shields.io/badge/Coverage-%E2%89%A570%25-brightgreen.svg)](#-running-tests)
 [![Code Style: Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
