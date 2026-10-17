@@ -13,11 +13,11 @@
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/sections/planner.css">
-  <link rel="stylesheet" href="../css/sections/generating.css?v=6">
-  <link rel="stylesheet" href="../css/sections/results.css?v=6">
-  <link rel="stylesheet" href="../css/sections/trips.css?v=6">
-  <link rel="stylesheet" href="../css/sections/chat.css?v=6">
-  <link rel="stylesheet" href="../css/sections/plan-page.css?v=6">
+  <link rel="stylesheet" href="../css/sections/generating.css?v=7">
+  <link rel="stylesheet" href="../css/sections/results.css?v=7">
+  <link rel="stylesheet" href="../css/sections/trips.css?v=7">
+  <link rel="stylesheet" href="../css/sections/chat.css?v=7">
+  <link rel="stylesheet" href="../css/sections/plan-page.css?v=7">
   <link rel="stylesheet" href="../css/print.css" media="print">
 </head>
 <body>
@@ -444,36 +444,61 @@
 
           <!-- Tab 6: Budget Split -->
           <div id="tab-budget" class="tab-panel" role="tabpanel">
-            <div class="budget-panel-grid">
-              <div class="glass-card">
-                <h3 style="margin-bottom: 16px;">Estimated Expense Breakdown</h3>
-                <div id="budget-chart-container" class="budget-chart-wrapper"></div>
+            <div class="budget-panel-header" style="margin-bottom: 24px;">
+              <h3 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 6px;">Target Budget Allocation</h3>
+              <p class="text-sm text-muted">Intelligent financial distribution calculated across lodging, dining, transit, sights, and buffer.</p>
+            </div>
+            <div class="budget-dashboard">
+              <div class="donut-chart-container">
+                <div id="budget-svg-container"></div>
+                <div class="donut-center-text">
+                  <span class="text-xs text-muted">Total Budget</span>
+                  <span id="budget-donut-center" class="donut-center-amount"></span>
+                </div>
               </div>
-              <div class="glass-card">
-                <h3 style="margin-bottom: 16px;">Local Financial Advisory</h3>
-                <div id="budget-notes-container"></div>
-              </div>
+              <div id="budget-table-container"></div>
+            </div>
+
+            <div class="budget-advisory-card" style="margin-top: 24px;">
+              <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>💳</span> Local Financial Advisory & Currency Guidance
+              </h4>
+              <div id="budget-advisory-notes" class="budget-advisory-grid"></div>
             </div>
           </div>
 
           <!-- Tab 7: AI Travel Assistant & Chat -->
           <div id="tab-assistant" class="tab-panel" role="tabpanel">
-            <div class="chat-wrapper">
-              <div class="chat-header">
-                <h3>Interactive AI Travel Assistant</h3>
-                <p>Ask questions, swap activities, or discuss pacing for this plan.</p>
+            <div class="assistant-panel">
+              <div class="assistant-panel-header">
+                <div class="assistant-status-row">
+                  <span class="assistant-avatar">✨</span>
+                  <div>
+                    <h4>Interactive AI Travel Assistant</h4>
+                    <p class="text-sm text-muted">Direct agentic consultant with complete visibility of your destination, places, and budget.</p>
+                  </div>
+                </div>
+                <div class="assistant-badge-live">
+                  <span class="live-dot"></span> Online & Ready
+                </div>
               </div>
 
-              <div id="assistant-messages" class="chat-messages" role="log" aria-live="polite"></div>
+              <div id="assistant-messages" class="assistant-messages" role="log" aria-live="polite"></div>
 
-              <div class="chat-suggestions-wrapper">
-                <span style="font-size: 11px; color: var(--color-text-muted);">Suggested inquiries:</span>
-                <div id="assistant-suggestions" class="chat-suggestions"></div>
+              <div class="assistant-suggestions-wrapper">
+                <div class="assistant-suggestions-label">💡 Suggested inquiries (click to test):</div>
+                <div id="assistant-suggestions" class="assistant-suggestions"></div>
               </div>
 
-              <form id="assistant-form" class="chat-input-bar">
-                <input type="text" id="assistant-input" class="chat-input" placeholder="Ask about places, diet options, or schedules..." maxlength="200" required>
-                <button type="submit" class="btn btn-primary btn-sm">Send</button>
+              <form id="assistant-form" class="assistant-input-bar">
+                <input type="text" id="assistant-input" class="assistant-input" placeholder="Ask questions, swap activities, or refine your itinerary pacing..." maxlength="300" required>
+                <button type="submit" class="btn btn-primary assistant-send-btn" aria-label="Send message">
+                  <span>Send</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
               </form>
             </div>
           </div>
@@ -571,6 +596,6 @@
 
   <!-- Scripts -->
   <script src="../vendor/leaflet/leaflet.js?v=2" defer></script>
-  <script type="module" src="../js/plan-main.js?v=6"></script>
+  <script type="module" src="../js/plan-main.js?v=7"></script>
 </body>
 </html>

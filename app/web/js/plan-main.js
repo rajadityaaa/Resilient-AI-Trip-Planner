@@ -9,14 +9,14 @@
  *  - Hash routing (#/trip/<slug>, #/my-trips, #/new)
  */
 
-import { PlannerManager } from "./planner.js?v=6";
-import { ProgressManager } from "./progress.js?v=6";
-import { ResultsManager } from "./results.js?v=6";
-import { MapManager } from "./map.js?v=6";
-import { AssistantManager } from "./assistant.js?v=6";
-import { TripsManager } from "./trips.js?v=6";
-import { API } from "./api.js?v=6";
-import { showToast } from "./utils.js?v=6";
+import { PlannerManager } from "./planner.js?v=7";
+import { ProgressManager } from "./progress.js?v=7";
+import { ResultsManager } from "./results.js?v=7";
+import { MapManager } from "./map.js?v=7";
+import { AssistantManager } from "./assistant.js?v=7";
+import { TripsManager } from "./trips.js?v=7";
+import { API } from "./api.js?v=7";
+import { showToast } from "./utils.js?v=7";
 
 class PlannerApp {
   constructor() {

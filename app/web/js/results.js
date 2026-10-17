@@ -41,6 +41,7 @@ export class ResultsManager {
     this.budgetTableContainer = document.getElementById("budget-table-container");
     this.budgetSvgContainer = document.getElementById("budget-svg-container");
     this.budgetTotalCenter = document.getElementById("budget-donut-center");
+    this.budgetAdvisoryNotes = document.getElementById("budget-advisory-notes");
     this.transportContainer = document.getElementById("transport-container");
     this.packingContainer = document.getElementById("packing-container");
     this.timingsContainer = document.getElementById("timings-container");
@@ -141,7 +142,13 @@ export class ResultsManager {
     this.renderHotels(tripData.hotels || [], tripData.budget_currency);
     this.renderRestaurants(tripData.restaurants || []);
     this.renderWeather(tripData.weather);
-    this.renderBudget(tripData.budget_breakdown, tripData.budget_total, tripData.budget_currency);
+    this.renderBudget(
+      tripData.budget_breakdown,
+      tripData.budget_total,
+      tripData.budget_currency,
+      tripData.currency_info,
+      tripData.destination
+    );
     this.renderTransport(tripData.transport_guide);
     this.renderPackingList(tripData.packing_list || []);
     this.renderTimings(tripData.timings);
@@ -303,26 +310,95 @@ export class ResultsManager {
     });
   }
 
-  renderBudget(breakdown, total, currency = "USD") {
-    if (!this.budgetTableContainer || !breakdown) return;
+  renderBudget(breakdown, total, currency = "USD", currencyInfo = null, destination = "") {
+    if (!this.budgetTableContainer) {
+      this.budgetTableContainer = document.getElementById("budget-table-container");
+    }
+    if (!this.budgetSvgContainer) {
+      this.budgetSvgContainer = document.getElementById("budget-svg-container");
+    }
+    if (!this.budgetTotalCenter) {
+      this.budgetTotalCenter = document.getElementById("budget-donut-center");
+    }
+    if (!this.budgetAdvisoryNotes) {
+      this.budgetAdvisoryNotes = document.getElementById("budget-advisory-notes");
+    }
+    if (!this.budgetTableContainer) return;
     this.budgetTableContainer.innerHTML = "";
+
+    const effectiveTotal = Number(total) || 2000;
+    const hasValidBreakdown = breakdown && typeof breakdown === "object" && Object.keys(breakdown).length > 0;
+    const effectiveBreakdown = hasValidBreakdown
+      ? breakdown
+      : {
+          lodging: Math.round(effectiveTotal * 0.40),
+          food: Math.round(effectiveTotal * 0.25),
+          attractions: Math.round(effectiveTotal * 0.15),
+          transport: Math.round(effectiveTotal * 0.10),
+          buffer: Math.round(effectiveTotal * 0.10),
+        };
+
+    const categoryMeta = {
+      lodging: { icon: "🏨", label: "Accommodations & Stays", color: "#8e24aa" },
+      hotels: { icon: "🏨", label: "Accommodations & Stays", color: "#8e24aa" },
+      food: { icon: "🍽️", label: "Dining & Culinary", color: "#ea4335" },
+      dining: { icon: "🍽️", label: "Dining & Culinary", color: "#ea4335" },
+      restaurants: { icon: "🍽️", label: "Dining & Culinary", color: "#ea4335" },
+      attractions: { icon: "🏛️", label: "Attractions & Sights", color: "#1a73e8" },
+      activities: { icon: "🏛️", label: "Attractions & Sights", color: "#1a73e8" },
+      sights: { icon: "🏛️", label: "Attractions & Sights", color: "#1a73e8" },
+      transport: { icon: "🚆", label: "Transit & Ground Travel", color: "#10b981" },
+      transit: { icon: "🚆", label: "Transit & Ground Travel", color: "#10b981" },
+      flights: { icon: "✈️", label: "Flight Estimations", color: "#0284c7" },
+      buffer: { icon: "🛡️", label: "Contingency & Reserve", color: "#f59e0b" },
+      miscellaneous: { icon: "🛡️", label: "Contingency & Reserve", color: "#f59e0b" },
+    };
 
     const table = el("table", { className: "budget-table" }, [
       el("thead", {}, [
         el("tr", {}, [
           el("th", {}, "Category"),
-          el("th", {}, "Allocation"),
-          el("th", {}, "Percent"),
+          el("th", { style: "width: 32%;" }, "Allocation Share"),
+          el("th", { style: "text-align: right;" }, "Estimated Amount"),
+          el("th", { style: "text-align: right;" }, "Share"),
         ]),
       ]),
       el("tbody", {}, [
-        ...Object.entries(breakdown).map(([category, amount]) => {
+        ...Object.entries(effectiveBreakdown).map(([category, amount], idx) => {
           const num = Number(amount) || 0;
-          const pct = total > 0 ? Math.round((num / total) * 100) : 0;
-          return el("tr", {}, [
-            el("td", { style: "text-transform: capitalize;" }, category.replace(/_/g, " ")),
-            el("td", {}, formatCurrency(num, currency)),
-            el("td", {}, `${pct}%`),
+          const pct = effectiveTotal > 0 ? Math.round((num / effectiveTotal) * 100) : 0;
+          const key = category.toLowerCase().trim();
+          const meta = categoryMeta[key] || {
+            icon: "💳",
+            label: category.replace(/_/g, " "),
+            color: "#38bdf8",
+          };
+
+          return el("tr", {
+            className: "budget-table-row",
+            title: `Click to highlight ${meta.label}`,
+            onClick: () => {
+              document.querySelectorAll(".budget-table-row").forEach(r => r.classList.remove("row-active"));
+              const rows = document.querySelectorAll(".budget-table-row");
+              if (rows[idx]) rows[idx].classList.add("row-active");
+            }
+          }, [
+            el("td", { className: "budget-cat-cell" }, [
+              el("span", { className: "budget-cat-icon" }, meta.icon),
+              el("strong", { className: "budget-cat-name" }, meta.label),
+            ]),
+            el("td", {}, [
+              el("div", { className: "budget-bar-track" }, [
+                el("div", {
+                  className: "budget-bar-fill",
+                  style: `width: ${Math.min(pct, 100)}%; background-color: ${meta.color};`,
+                }),
+              ]),
+            ]),
+            el("td", { style: "text-align: right; font-weight: 700; color: #fff;" }, formatCurrency(num, currency)),
+            el("td", { style: "text-align: right;" }, [
+              el("span", { className: "budget-pct-badge", style: `color: ${meta.color}; border: 1px solid ${meta.color}44;` }, `${pct}%`),
+            ]),
           ]);
         }),
       ]),
@@ -332,10 +408,55 @@ export class ResultsManager {
 
     // Pure inline SVG doughnut
     if (this.budgetSvgContainer) {
-      this.renderSvgDonut(breakdown, total);
+      this.renderSvgDonut(effectiveBreakdown, effectiveTotal);
     }
     if (this.budgetTotalCenter) {
-      this.budgetTotalCenter.textContent = formatCurrency(total, currency);
+      this.budgetTotalCenter.textContent = formatCurrency(effectiveTotal, currency);
+    }
+
+    // Render Local Financial Advisory & Currency Notes
+    if (this.budgetAdvisoryNotes) {
+      this.budgetAdvisoryNotes.innerHTML = "";
+      const items = [];
+
+      if (currencyInfo && currencyInfo.local_currency && currencyInfo.local_currency !== currency) {
+        const rate = currencyInfo.exchange_rate ? `1 ${currency} ≈ ${currencyInfo.exchange_rate} ${currencyInfo.local_currency}` : "";
+        const converted = currencyInfo.converted_budget ? `Total: ~${Number(currencyInfo.converted_budget).toLocaleString()} ${currencyInfo.local_currency}` : "";
+        items.push(el("div", { className: "advisory-card" }, [
+          el("div", { className: "advisory-icon" }, "💱"),
+          el("div", {}, [
+            el("div", { className: "advisory-title" }, `Local Currency (${currencyInfo.local_currency})`),
+            el("div", { className: "advisory-desc" }, `${rate}${rate && converted ? " · " : ""}${converted}`),
+          ]),
+        ]));
+      }
+
+      if (currencyInfo && currencyInfo.cash_tips) {
+        items.push(el("div", { className: "advisory-card" }, [
+          el("div", { className: "advisory-icon" }, "💵"),
+          el("div", {}, [
+            el("div", { className: "advisory-title" }, "Payment & Cash Guidance"),
+            el("div", { className: "advisory-desc" }, currencyInfo.cash_tips),
+          ]),
+        ]));
+      } else {
+        items.push(el("div", { className: "advisory-card" }, [
+          el("div", { className: "advisory-icon" }, "💳"),
+          el("div", {}, [
+            el("div", { className: "advisory-title" }, "Card & Digital Payments"),
+            el("div", { className: "advisory-desc" }, "International Visa and Mastercard are accepted at major stays and dining. Carry modest cash for local stalls and small transit."),
+          ]),
+        ]));
+        items.push(el("div", { className: "advisory-card" }, [
+          el("div", { className: "advisory-icon" }, "🏷️"),
+          el("div", {}, [
+            el("div", { className: "advisory-title" }, "Tipping Custom & Taxes"),
+            el("div", { className: "advisory-desc" }, "Tipping is appreciated for exceptional hospitality. Check bills for included service charges."),
+          ]),
+        ]));
+      }
+
+      items.forEach(card => this.budgetAdvisoryNotes.appendChild(card));
     }
   }
 
