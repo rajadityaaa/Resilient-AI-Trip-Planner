@@ -49,6 +49,10 @@ export class ProgressManager {
     });
   }
 
+  startTracking(jobId) {
+    return this.start(jobId);
+  }
+
   start(jobId) {
     if (!this.section) return;
     this.section.classList.add("active");

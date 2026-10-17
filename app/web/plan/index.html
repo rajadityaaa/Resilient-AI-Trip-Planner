@@ -13,11 +13,11 @@
   <link rel="stylesheet" href="../css/layout.css">
   <link rel="stylesheet" href="../css/components.css">
   <link rel="stylesheet" href="../css/sections/planner.css">
-  <link rel="stylesheet" href="../css/sections/generating.css">
-  <link rel="stylesheet" href="../css/sections/results.css?v=5">
-  <link rel="stylesheet" href="../css/sections/trips.css">
-  <link rel="stylesheet" href="../css/sections/chat.css">
-  <link rel="stylesheet" href="../css/sections/plan-page.css">
+  <link rel="stylesheet" href="../css/sections/generating.css?v=6">
+  <link rel="stylesheet" href="../css/sections/results.css?v=6">
+  <link rel="stylesheet" href="../css/sections/trips.css?v=6">
+  <link rel="stylesheet" href="../css/sections/chat.css?v=6">
+  <link rel="stylesheet" href="../css/sections/plan-page.css?v=6">
   <link rel="stylesheet" href="../css/print.css" media="print">
 </head>
 <body>
@@ -49,6 +49,14 @@
       </div>
     </div>
   </header>
+
+  <!-- Dynamic Animated Ambient Background -->
+  <div class="planner-ambient-canvas" aria-hidden="true">
+    <div class="ambient-glow orb-cyan"></div>
+    <div class="ambient-glow orb-gold"></div>
+    <div class="ambient-glow orb-purple"></div>
+    <div class="ambient-grid-mesh"></div>
+  </div>
 
   <!-- Main Content Landmark -->
   <main id="main-content" class="planner-page-main">
@@ -486,12 +494,25 @@
 
   <!-- My Trips Modal View -->
   <div id="my-trips-backdrop" class="modal-backdrop"></div>
-  <aside id="my-trips-view" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="my-trips-title">
+  <aside id="my-trips-modal" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="my-trips-title">
     <div class="modal-header">
-      <h3 id="my-trips-title">My Saved Expeditions</h3>
-      <button type="button" id="my-trips-close" class="modal-close" aria-label="Close dialog">✕</button>
+      <div>
+        <h3 id="my-trips-title" class="modal-title">My Saved Expeditions</h3>
+        <p class="modal-subtitle">Trips saved locally on this browser. Private trip IDs are never exposed.</p>
+      </div>
+      <div class="modal-header-actions">
+        <button type="button" id="btn-clear-all-trips" class="btn btn-outline btn-sm text-error" style="display: none;">Clear all</button>
+        <button type="button" id="my-trips-close" class="modal-close-btn" aria-label="Close dialog">✕</button>
+      </div>
     </div>
-    <div id="my-trips-list" class="my-trips-list"></div>
+    <div class="modal-body">
+      <div id="saved-trips-grid" class="saved-trips-grid"></div>
+      <div id="empty-trips-state" class="empty-trips-state" style="display: none;">
+        <div class="empty-trips-icon">🗺️</div>
+        <h4>No journeys saved yet</h4>
+        <p class="text-sm text-muted">Plan your next expedition and click "Save to My Trips" to see your itineraries here.</p>
+      </div>
+    </div>
   </aside>
 
   <!-- Footer -->
@@ -550,6 +571,6 @@
 
   <!-- Scripts -->
   <script src="../vendor/leaflet/leaflet.js?v=2" defer></script>
-  <script type="module" src="../js/plan-main.js?v=5"></script>
+  <script type="module" src="../js/plan-main.js?v=6"></script>
 </body>
 </html>

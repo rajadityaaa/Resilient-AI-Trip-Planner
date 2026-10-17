@@ -10,6 +10,9 @@ export class TripsManager {
   constructor(onOpenTrip) {
     this.onOpenTrip = onOpenTrip;
     this.section = document.getElementById("my-trips-section");
+    this.modal = document.getElementById("my-trips-modal") || document.getElementById("my-trips-view");
+    this.backdrop = document.getElementById("my-trips-backdrop");
+    this.closeBtn = document.getElementById("my-trips-close");
     this.grid = document.getElementById("saved-trips-grid");
     this.emptyState = document.getElementById("empty-trips-state");
     this.btnClearAll = document.getElementById("btn-clear-all-trips");
@@ -25,9 +28,45 @@ export class TripsManager {
         showToast("All saved trips cleared.", "info");
       }
     });
+
+    this.closeBtn?.addEventListener("click", () => this.closeModal());
+    this.backdrop?.addEventListener("click", () => this.closeModal());
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && this.isModalOpen()) {
+        this.closeModal();
+      }
+    });
+  }
+
+  isModalOpen() {
+    return this.modal?.classList.contains("active") || false;
+  }
+
+  openModal() {
+    this.render();
+    if (this.modal) {
+      this.modal.classList.add("active");
+      this.backdrop?.classList.add("active");
+      document.body.style.overflow = "hidden";
+    } else if (this.section) {
+      this.show();
+    }
+  }
+
+  closeModal() {
+    this.modal?.classList.remove("active");
+    this.backdrop?.classList.remove("active");
+    document.body.style.overflow = "";
+    if (window.location.hash === "#/my-trips") {
+      history.replaceState(null, "", window.location.pathname);
+    }
   }
 
   show() {
+    if (this.modal) {
+      this.openModal();
+      return;
+    }
     if (!this.section) return;
     this.section.classList.add("active");
     this.section.scrollIntoView({ behavior: "smooth" });
@@ -35,6 +74,7 @@ export class TripsManager {
   }
 
   hide() {
+    this.closeModal();
     this.section?.classList.remove("active");
   }
 

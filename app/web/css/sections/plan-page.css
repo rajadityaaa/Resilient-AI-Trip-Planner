@@ -1,31 +1,122 @@
 /* plan-page.css - 3-Step Wizard Layout, Step Indicators & Live Summary Card */
 
+/* Dynamic Animated Ambient Background */
+.planner-ambient-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 15%, #0c1527 0%, #060912 60%, #03060c 100%);
+}
+
+.ambient-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(85px);
+  opacity: 0.5;
+  will-change: transform;
+}
+
+.orb-cyan {
+  width: 580px;
+  height: 580px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.38) 0%, rgba(14, 165, 233, 0.08) 60%, transparent 80%);
+  top: -120px;
+  left: 8%;
+  animation: float-orb-cyan 16s ease-in-out infinite alternate;
+}
+
+.orb-gold {
+  width: 620px;
+  height: 620px;
+  background: radial-gradient(circle, rgba(230, 162, 60, 0.32) 0%, rgba(245, 158, 11, 0.08) 60%, transparent 80%);
+  top: 25%;
+  right: -100px;
+  animation: float-orb-gold 20s ease-in-out infinite alternate;
+}
+
+.orb-purple {
+  width: 680px;
+  height: 680px;
+  background: radial-gradient(circle, rgba(168, 85, 247, 0.28) 0%, rgba(147, 51, 234, 0.06) 60%, transparent 80%);
+  bottom: -160px;
+  left: 20%;
+  animation: float-orb-purple 24s ease-in-out infinite alternate;
+}
+
+@keyframes float-orb-cyan {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(70px, 90px) scale(1.12); }
+  100% { transform: translate(-50px, 50px) scale(0.94); }
+}
+
+@keyframes float-orb-gold {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-90px, -70px) scale(1.16); }
+  100% { transform: translate(60px, -40px) scale(0.92); }
+}
+
+@keyframes float-orb-purple {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-60px, -80px) scale(1.1); }
+  100% { transform: translate(80px, -30px) scale(1.06); }
+}
+
+/* Constellation & Cyber-Grid Mesh Overlay */
+.ambient-grid-mesh {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.028) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse at 50% 35%, #000 30%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 35%, #000 30%, transparent 85%);
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ambient-glow {
+    animation: none !important;
+  }
+}
+
 .planner-page-main {
-  padding-top: calc(var(--nav-height) + var(--space-xl));
-  padding-bottom: var(--space-3xl);
+  padding-top: calc(var(--nav-height, 74px) + var(--space-2xl));
+  padding-bottom: var(--space-4xl);
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
+  background: radial-gradient(circle 600px at var(--mouse-x, 50%) var(--mouse-y, 30%), rgba(56, 189, 248, 0.06), transparent 80%);
 }
 
 .plan-header-banner {
   text-align: center;
-  max-width: 680px;
-  margin: 0 auto var(--space-2xl);
+  max-width: 740px;
+  margin: var(--space-lg) auto var(--space-2xl);
+  padding: 0 var(--space-md);
+  position: relative;
+  z-index: 2;
 }
 
 .plan-header-title {
   font-family: var(--font-heading);
-  font-size: clamp(2rem, 3.5vw, 2.75rem);
+  font-size: clamp(2.2rem, 4vw, 3rem);
   font-weight: var(--font-weight-extrabold);
-  letter-spacing: -0.03em;
-  margin-bottom: var(--space-xs);
-  background: linear-gradient(135deg, #ffffff 30%, var(--color-accent-light) 100%);
+  letter-spacing: -0.035em;
+  line-height: 1.15;
+  margin-bottom: var(--space-sm);
+  background: linear-gradient(135deg, #ffffff 40%, var(--color-accent-light) 90%, var(--color-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 14px rgba(0, 0, 0, 0.4));
 }
 
 .plan-header-sub {
   color: var(--color-text-secondary);
   font-size: var(--font-size-base);
+  line-height: 1.5;
 }
 
 /* 3-Step Progress Indicator Bar */

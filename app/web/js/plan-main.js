@@ -9,14 +9,14 @@
  *  - Hash routing (#/trip/<slug>, #/my-trips, #/new)
  */
 
-import { PlannerManager } from "./planner.js";
-import { ProgressManager } from "./progress.js";
-import { ResultsManager } from "./results.js";
-import { MapManager } from "./map.js?v=5";
-import { AssistantManager } from "./assistant.js?v=3";
-import { TripsManager } from "./trips.js";
-import { API } from "./api.js";
-import { showToast } from "./utils.js";
+import { PlannerManager } from "./planner.js?v=6";
+import { ProgressManager } from "./progress.js?v=6";
+import { ResultsManager } from "./results.js?v=6";
+import { MapManager } from "./map.js?v=6";
+import { AssistantManager } from "./assistant.js?v=6";
+import { TripsManager } from "./trips.js?v=6";
+import { API } from "./api.js?v=6";
+import { showToast } from "./utils.js?v=6";
 
 class PlannerApp {
   constructor() {
@@ -50,6 +50,7 @@ class PlannerApp {
     this.setupTabs();
     this.setupHashRouter();
     this.initSampleExpeditionButton();
+    this.initInteractiveGlow();
   }
 
   setupTabs() {
@@ -310,12 +311,12 @@ class PlannerApp {
   handlePlanStarted(jobId, tripRequest) {
     this.currentJobId = jobId;
     document.getElementById("planner-section")?.classList.add("hidden");
-    document.getElementById("results-section")?.classList.remove("visible");
+    document.getElementById("results-section")?.classList.remove("active", "visible");
 
-    this.progressManager.startTracking(jobId);
+    this.progressManager.start(jobId);
     const genSec = document.getElementById("generating-section");
     if (genSec) {
-      genSec.classList.add("visible");
+      genSec.classList.add("active", "visible");
       genSec.scrollIntoView({ behavior: "smooth" });
     }
   }
@@ -326,14 +327,36 @@ class PlannerApp {
       result.id = this.currentJobId;
     }
 
-    document.getElementById("generating-section")?.classList.remove("visible");
+    const genSec = document.getElementById("generating-section");
+    if (genSec) {
+      genSec.classList.remove("active", "visible");
+    }
     this.openTrip(result);
   }
 
   handlePlanFailed(error) {
-    document.getElementById("generating-section")?.classList.remove("visible");
+    const genSec = document.getElementById("generating-section");
+    if (genSec) {
+      genSec.classList.remove("active", "visible");
+    }
     document.getElementById("planner-section")?.classList.remove("hidden");
     showToast(`Expedition synthesis failed: ${error}`, "error");
+  }
+
+  initInteractiveGlow() {
+    const main = document.querySelector(".planner-page-main");
+    if (!main) return;
+    main.addEventListener(
+      "mousemove",
+      (e) => {
+        const rect = main.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        main.style.setProperty("--mouse-x", `${x.toFixed(1)}%`);
+        main.style.setProperty("--mouse-y", `${y.toFixed(1)}%`);
+      },
+      { passive: true }
+    );
   }
 
   openTrip(tripData) {
