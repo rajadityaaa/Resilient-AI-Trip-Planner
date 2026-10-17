@@ -1,0 +1,694 @@
+{
+  "destination": "Kyoto, Japan",
+  "origin": "London, UK",
+  "start_date": "2026-11-10",
+  "end_date": "2026-11-13",
+  "budget_total": 1800.0,
+  "budget_currency": "USD",
+  "travelers_count": 2,
+  "trip_type": "cultural",
+  "preferences": [
+    "temples",
+    "gardens",
+    "traditional dining"
+  ],
+  "pace": "medium",
+  "errors": [],
+  "weather": {
+    "daily": [
+      {
+        "date": "2026-11-10",
+        "temp_max": 16.1,
+        "temp_min": 7.7,
+        "precipitation_mm": 0.2,
+        "condition": "Light drizzle"
+      },
+      {
+        "date": "2026-11-11",
+        "temp_max": 16.1,
+        "temp_min": 6.3,
+        "precipitation_mm": 0.0,
+        "condition": "Overcast"
+      },
+      {
+        "date": "2026-11-12",
+        "temp_max": 15.0,
+        "temp_min": 6.4,
+        "precipitation_mm": 0.0,
+        "condition": "Overcast"
+      },
+      {
+        "date": "2026-11-13",
+        "temp_max": 16.6,
+        "temp_min": 9.6,
+        "precipitation_mm": 0.0,
+        "condition": "Overcast"
+      }
+    ],
+    "is_estimate": true
+  },
+  "packing_list": [
+    "Light breathable cotton clothing",
+    "Layered long-sleeve shirts",
+    "Warm sweater or fleece",
+    "Waterproof jacket with hood",
+    "Compact umbrella",
+    "Comfortable walking shoes",
+    "Water-resistant sandals",
+    "Socks (including wool for cold)",
+    "Underwear",
+    "Sleepwear",
+    "Travel towel",
+    "Reusable water bottle",
+    "Travel umbrella",
+    "Universal power adapter",
+    "Portable charger",
+    "Sunscreen & sunglasses",
+    "Hat or cap",
+    "Travel-sized toiletries",
+    "First aid kit & basic medications",
+    "Prescription medications",
+    "Travel insurance documents",
+    "Passport and visa documents",
+    "Photocopies of important documents",
+    "Cash and travel cards",
+    "Guidebook or offline maps",
+    "Notebook and pen",
+    "Cultural etiquette guide",
+    "Respectful clothing for temple visits (long pants, sleeves)",
+    "Small daypack",
+    "Reusable shopping bag",
+    "Snacks for long walks",
+    "Local language phrasebook",
+    "Emergency contact list",
+    "Travel locks for luggage",
+    "Laundry bag",
+    "Compact binoculars for garden viewing",
+    "Camera or smartphone with extra storage",
+    "Travel pillow"
+  ],
+  "attractions": [
+    {
+      "name": "Kinkaku‑ji (Golden Pavilion)",
+      "category": "Attraction",
+      "lat": 35.0395,
+      "lon": 135.7292,
+      "match_reason": "Iconic Zen temple with gold leaf and surrounding garden.",
+      "source": "ai_suggested",
+      "tags": {}
+    },
+    {
+      "name": "Ginkaku‑ji (Silver Pavilion)",
+      "category": "Attraction",
+      "lat": 35.0301,
+      "lon": 135.7536,
+      "match_reason": "Historic temple featuring a beautiful moss garden.",
+      "source": "ai_suggested",
+      "tags": {}
+    },
+    {
+      "name": "Kiyomizu‑dera",
+      "category": "Attraction",
+      "lat": 35.0219,
+      "lon": 135.7853,
+      "match_reason": "Temple with panoramic views and traditional wooden stage.",
+      "source": "ai_suggested",
+      "tags": {}
+    },
+    {
+      "name": "Ryoan‑ji",
+      "category": "Attraction",
+      "lat": 35.0272,
+      "lon": 135.7154,
+      "match_reason": "Famous rock garden in a tranquil temple setting.",
+      "source": "ai_suggested",
+      "tags": {}
+    },
+    {
+      "name": "Arashiyama Bamboo Grove",
+      "category": "Attraction",
+      "lat": 35.0095,
+      "lon": 135.6635,
+      "match_reason": "Serene bamboo forest near a historic temple.",
+      "source": "ai_suggested",
+      "tags": {}
+    },
+    {
+      "name": "Nijo Castle",
+      "category": "Attraction",
+      "lat": 35.0114,
+      "lon": 135.7645,
+      "match_reason": "Historic castle with traditional gardens and tea rooms.",
+      "source": "ai_suggested",
+      "tags": {}
+    },
+    {
+      "name": "Honnoji Temple Treasure Hall",
+      "category": "Museum",
+      "lat": 35.0102889,
+      "lon": 135.7675663,
+      "address": "",
+      "source": "nominatim",
+      "tags": {}
+    },
+    {
+      "name": "Koryo Museum of Art",
+      "category": "Museum",
+      "lat": 35.0543369,
+      "lon": 135.7508317,
+      "address": "",
+      "source": "nominatim",
+      "tags": {}
+    },
+    {
+      "name": "Kyoto art center",
+      "category": "Museum",
+      "lat": 35.005437,
+      "lon": 135.7582688,
+      "address": "",
+      "source": "nominatim",
+      "tags": {}
+    },
+    {
+      "name": "Ryukoku Museum",
+      "category": "Museum",
+      "lat": 34.9909734,
+      "lon": 135.7535034,
+      "address": "",
+      "source": "nominatim",
+      "tags": {}
+    },
+    {
+      "name": "Yanagihara Bank Memorial Museum",
+      "category": "Museum",
+      "lat": 34.9861652,
+      "lon": 135.7647494,
+      "address": "",
+      "source": "nominatim",
+      "tags": {}
+    },
+    {
+      "name": "Kyoto Seishu Netsuke Art Museum",
+      "category": "Museum",
+      "lat": 35.0014634,
+      "lon": 135.7446225,
+      "address": "",
+      "source": "nominatim",
+      "tags": {}
+    }
+  ],
+  "restaurants": [
+    {
+      "name": "M&Maison KYOTO",
+      "category": "Restaurant",
+      "lat": 34.9936862,
+      "lon": 135.7610071,
+      "tags": {},
+      "match_reason": "Located in central Kyoto, close to historic temples and traditional gardens, offering authentic Kyoto cuisine in a classic setting.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "kura kura",
+      "category": "Restaurant",
+      "lat": 34.9897014,
+      "lon": 135.7608208,
+      "tags": {},
+      "match_reason": "Situated near the Kinkaku‑ji temple area, this spot serves traditional Japanese dishes in a serene, garden‑like ambiance.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "京創作 平林亭 展望閣",
+      "category": "Restaurant",
+      "lat": 34.9894398,
+      "lon": 135.7600197,
+      "tags": {},
+      "match_reason": "Close to the Kyoto Imperial Palace gardens, offering a refined dining experience that reflects Kyoto’s cultural heritage.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "京的燒肉處 弘",
+      "category": "Restaurant",
+      "lat": 34.9887639,
+      "lon": 135.7608416,
+      "tags": {},
+      "match_reason": "Located near the Ginkaku‑ji temple and its gardens, this restaurant emphasizes traditional Kyoto-style meals.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "清水 順正 おかべ家",
+      "category": "Restaurant",
+      "lat": 34.9956603,
+      "lon": 135.7809617,
+      "tags": {},
+      "match_reason": "Near the Philosopher’s Path and its surrounding gardens, offering a tranquil dining experience with classic Japanese fare.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "横綱",
+      "category": "Restaurant",
+      "lat": 34.9960624,
+      "lon": 135.74884,
+      "tags": {},
+      "match_reason": "Close to the Kyoto Botanical Garden, providing a traditional menu in a peaceful, nature‑infused setting.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "割烹大関",
+      "category": "Restaurant",
+      "lat": 34.992817,
+      "lon": 135.745396,
+      "tags": {},
+      "match_reason": "Located near the Kyoto Imperial Palace and its gardens, this spot offers authentic Kyoto cuisine in a historic atmosphere.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "パッチョコーネ",
+      "category": "Restaurant",
+      "lat": 34.9893403,
+      "lon": 135.7540395,
+      "tags": {},
+      "match_reason": "Near the Kiyomizu‑dera temple and surrounding gardens, serving traditional Japanese dishes in a culturally rich environment.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "Yayoiken",
+      "category": "Restaurant",
+      "lat": 34.9964903,
+      "lon": 135.760083,
+      "tags": {},
+      "match_reason": "Situated close to the Kyoto International Manga Museum and nearby gardens, offering a blend of traditional cuisine and local culture.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    },
+    {
+      "name": "Soba no mi yoshima",
+      "category": "Restaurant",
+      "lat": 34.9964463,
+      "lon": 135.7602292,
+      "tags": {},
+      "match_reason": "Located near the Kyoto Botanical Garden, this soba house provides a traditional dining experience amid natural surroundings.",
+      "rating": null,
+      "price_level": null,
+      "website": null,
+      "source": "nominatim"
+    }
+  ],
+  "hotels": [
+    {
+      "name": "Hotel Resol Trinity Kyoto Oikefuyacho",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 35.0116826,
+      "location_lon": 135.765976,
+      "lat": 35.0116826,
+      "lon": 135.765976,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "Hotel Canata Kyoto",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 35.0127204,
+      "location_lon": 135.7522502,
+      "lat": 35.0127204,
+      "lon": 135.7522502,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "Hotel SHE,",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9771755,
+      "location_lon": 135.7593746,
+      "lat": 34.9771755,
+      "lon": 135.7593746,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "RC Hotel Kyoto Yasaka",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9979621,
+      "location_lon": 135.779718,
+      "lat": 34.9979621,
+      "lon": 135.779718,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "THE HOTEL HIGASHIYAMA",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 35.008925,
+      "location_lon": 135.7837859,
+      "lat": 35.008925,
+      "lon": 135.7837859,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "TOKA KYOTO HOTEL",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9970832,
+      "location_lon": 135.7653613,
+      "lat": 34.9970832,
+      "lon": 135.7653613,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "Hotel Japanesque Kyoto Station Zequu Annex",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9824639,
+      "location_lon": 135.7640537,
+      "lat": 34.9824639,
+      "lon": 135.7640537,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "Hotel Excellence",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9873219,
+      "location_lon": 135.7537504,
+      "lat": 34.9873219,
+      "lon": 135.7537504,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "RESI STAY Gojozaka",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9943141,
+      "location_lon": 135.7739338,
+      "lat": 34.9943141,
+      "lon": 135.7739338,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    },
+    {
+      "name": "kyoto Riverview House 京楽",
+      "star_rating": 4.0,
+      "rating": null,
+      "price_level": null,
+      "price_per_night_usd": 169.5,
+      "price_source": "estimated",
+      "location_lat": 34.9984933,
+      "location_lon": 135.7683749,
+      "lat": 34.9984933,
+      "lon": 135.7683749,
+      "amenities": [
+        "Free WiFi",
+        "Air Conditioning",
+        "24/7 Front Desk"
+      ],
+      "website": null,
+      "phone": null,
+      "address": "",
+      "source": "nominatim"
+    }
+  ],
+  "budget_breakdown": {
+    "lodging": 663.16,
+    "food": 378.95,
+    "attractions": 284.21,
+    "transport": 189.47,
+    "buffer": 284.21
+  },
+  "transport_guide": {
+    "public_transit": "Kyoto’s public transit network consists mainly of buses and the JR Nara Line (the only rail line in the city). The subway system is under development; the current subway line (the Karasuma Line) runs from north to south, but most tourist sites are better accessed by bus. Bus routes are extensive and cover most attractions; the 24-hour bus pass (¥1,200) covers all city buses and offers unlimited rides. For shorter trips, consider the 1‑day bus pass (¥1,500) or the 3‑day pass (¥3,800). The JR Nara Line connects Kyoto Station to Nara and Osaka, and the JR West “Rapid” services are convenient for intercity travel. The Kyoto City Bus & Subway app provides real‑time schedules and route maps.\n\nLocal passes: The Kyoto City Bus & Subway 24‑hour pass (¥1,200) is the most economical option for tourists staying less than a day. For longer stays, the Kyoto City Bus 3‑day pass (¥3,800) or the Kyoto City Bus 7‑day pass (¥8,600) are available.\n\nKey stations: Kyoto Station (JR, Hankyu, Keihan, subway), Karasuma‑Oike (subway), and Gion‑Shijo (bus). Most major temples and shrines are within a 20‑minute bus ride from these hubs.\n\nTips: Always carry a rechargeable IC card (ICOCA, Suica, or Pasmo) for seamless transfers; the card can be topped up at stations and convenience stores.\n\n",
+    "taxi_rideshare": "Taxis in Kyoto are readily available from major stations and tourist spots. Standard fares start at ¥500 and increase by ¥120 per 200 m after the first 1 km. A typical 10‑km trip to central Kyoto costs around ¥3,500–¥4,500. Nighttime surcharges apply after 10 pm. For convenience, use local taxi apps such as JapanTaxi or Line Taxi; both support English and allow cashless payment. Uber operates only in a limited area (mainly near Kyoto Station) and is not widely used. Grab is not available in Kyoto.\n\n",
+    "walkability": "Kyoto’s historic districts—Gion, Higashiyama, and the Arashiyama area—are highly walkable. Most temples, shrines, and traditional streets are within a 15‑minute walk from each other. The downtown area around Kyoto Station and the Pontocho alley is also pedestrian-friendly, though some streets are narrow. For longer distances, consider a short bus ride or a bicycle rental.\n\n",
+    "airport_transfer": "The two main airports are Kansai International Airport (KIX) and Osaka Itami Airport (ITM). From KIX, the most common options are:\n1. **JR Haruka Express**: Direct to Kyoto Station, 75 min, ¥2,520 one‑way.\n2. **Airport Limousine Bus**: Stops at Kyoto Station and other hotels, 90 min, ¥2,300.\n3. **Taxi**: Approx. ¥20,000–¥25,000, 90 min.\n\nFrom ITM, take the **JR Haruka Express** or the **Airport Limousine Bus** to Kyoto Station; fares are ¥1,200–¥1,500. Alternatively, a local taxi from ITM to Kyoto Station costs around ¥10,000.\n\n",
+    "tips": [
+      "Carry an IC card (ICOCA, Suica, or Pasmo) for easy tap‑and‑go on buses and trains.",
+      "Check bus schedules in advance; some routes stop at night or have limited service on holidays."
+    ]
+  },
+  "currency_info": {
+    "local_currency": "JPY",
+    "converted_budget": 284364.0,
+    "exchange_rate": 157.98,
+    "cash_tips": "Most major credit cards (Visa, MasterCard, and increasingly JCB) are widely accepted in Japan, especially in urban areas and hotels, but small shops, rural spots, and many restaurants still prefer cash, so carry some yen for convenience. Tipping is generally not expected and can even be seen as rude; instead, a small service charge is already included in the bill."
+  },
+  "daily_itinerary": [
+    {
+      "day": 1,
+      "date": "2026-11-10",
+      "morning": "Start your day with a 30‑minute bus ride from Hotel Resol Trinity Kyoto Oikefuyacho to Kinkaku‑ji, admire the Golden Pavilion reflected in its pond and spend about 1 hour exploring the surrounding garden; bring an umbrella for the light drizzle. ",
+      "afternoon": "Take a taxi to Ginkaku‑ji, walk the Philosopher’s Path for 45 minutes to the Silver Pavilion, then linger 1 hour in its moss garden before heading to M&Maison KYOTO for a traditional kaiseki lunch; reserve a seat in advance. ",
+      "evening": "After a short subway ride to Higashiyama, visit Kiyomizu‑dera for a sunset view (allow 1 hour), then dine at kura kura for hearty Kyoto-style udon, trying the seasonal tempura; keep your raincoat handy for the evening mist. ",
+      "notes": "Weather: light drizzle, 8‑16 °C, pack a compact umbrella, waterproof shoes, and a light jacket; transport: purchase a one‑day bus pass for easy access to the three temples.",
+      "_trip_title": "Golden & Silver Temples Kyoto Escape",
+      "_overview": "Explore Kyoto's iconic heritage on a four‑day journey, from the shimmering Kinkaku‑ji and tranquil Ginkaku‑ji to the historic Kiyomizu‑dera. Wander the zen gardens of Ryoan‑ji and lose yourself in the towering bamboo of Arashiyama, immersing yourself in Japan's timeless culture."
+    },
+    {
+      "day": 2,
+      "date": "2026-11-11",
+      "morning": "Start the day with a visit to Ryoan‑ji, exploring its famed rock garden and surrounding temple grounds for about 1.5 hours; arrive early to avoid crowds and wear comfortable shoes for the stone paths. Afterward, stroll to the nearby tea house for a quick matcha break before heading back to the hotel to freshen up.",
+      "afternoon": "Take the subway to Arashiyama and wander the Bamboo Grove for roughly 1 hour, then walk to the nearby riverbank for a scenic photo stop before catching a bus to Nijo Castle where you’ll spend 2 hours touring the historic palace and its beautiful gardens. Allocate a short rest at a local kiosk for a snack before continuing your exploration.",
+      "evening": "Dine at 京創作 平林亭 展望閣 for a traditional kaiseki dinner (reserve a window seat for the garden view) and then finish the night with a relaxed yakiniku experience at 京的燒肉處 弘, where you can enjoy premium wagyu in a cozy setting. Both restaurants are a short taxi ride from your hotel, so you can easily return after dinner.",
+      "notes": "Weather is overcast with temperatures 6‑16 °C; bring a light waterproof jacket and layers, and consider a portable umbrella for the bamboo walk. Use the subway (Karasuma Line) and city buses; a prepaid IC card will simplify transfers."
+    },
+    {
+      "day": 3,
+      "date": "2026-11-12",
+      "morning": "Start the day with a 30‑minute walk from Hotel Resol Trinity Kyoto Oikefuyacho to Honnoji Temple Treasure Hall, where you can spend about 1.5 hours exploring the historic hall and its modest but meaningful artifacts. Afterward, head to the nearby Koryo Museum of Art (a 10‑minute walk) for another 1 hour to admire its collection of Korean and Japanese ceramics and paintings.",
+      "afternoon": "Take a short taxi ride (≈5 minutes) to the Kyoto Art Center, allocating roughly 2 hours to wander its rotating exhibitions and perhaps join a brief traditional craft workshop. Then enjoy a leisurely 45‑minute stroll to 清水 順正 おかべ家 for a late‑lunch of seasonal kaiseki, reserving a table in advance.",
+      "evening": "After a 15‑minute walk back toward the hotel area, stop at 横綱 for dinner, where you can savor classic Osaka‑style kushikatsu in a relaxed setting (plan for 1.5 hours). End the night with a gentle 10‑minute walk back to the hotel, reflecting on the day’s art and temple visits.",
+      "notes": "Weather: overcast, 6‑15 °C; bring a light waterproof jacket and comfortable shoes. Public transport is easy, but a prepaid ICOCA card will speed up bus and subway hops. Carry a small umbrella just in case."
+    },
+    {
+      "day": 4,
+      "date": "2026-11-13",
+      "morning": "Start the day with a 30‑minute walk from Hotel Resol Trinity Kyoto Oikefuyacho to the Ryukoku Museum, where you can explore its Buddhist art collections for about 1.5 hours; the museum’s quiet galleries are perfect for reflective mornings. Practical tip: rent an audio guide at the entrance to deepen your understanding of the exhibits.",
+      "afternoon": "After a short taxi ride, head to the Yanagihara Bank Memorial Museum for a 1‑hour visit to admire its Meiji‑era financial artifacts, then stroll to the nearby Kyoto Seishu Netsuke Art Museum for another hour of intricate miniature sculpture viewing. Practical tip: Bring a small notebook to sketch your favorite netsuke designs—they’re tiny but detailed!",
+      "evening": "Dine at 割烹大関 for a traditional kaiseki dinner (reserve ahead) and then finish the night with a relaxed coffee and dessert at パッチョコーネ, both within a 10‑minute walk from the museum district. Practical tip: Dress smart‑casual for the kaiseki restaurant, as a jacket is often required for men.",
+      "notes": "Weather: Overcast, 10‑17 °C, no rain—wear a light jacket and comfortable shoes for walking. Transport: Use a prepaid ICOCA card for easy subway and bus rides; the nearest subway station is Oike (Tozai Line)."
+    }
+  ],
+  "timings": {
+    "total_duration_s": 21.232,
+    "critical_path": [
+      "destination",
+      "attractions",
+      "summary"
+    ],
+    "agents": {
+      "destination": {
+        "name": "destination",
+        "start_offset_s": 0.018,
+        "duration_s": 1.051,
+        "status": "done",
+        "fallback_used": false,
+        "source": null,
+        "llm_model": null
+      },
+      "weather": {
+        "name": "weather",
+        "start_offset_s": 1.279,
+        "duration_s": 1.025,
+        "status": "done",
+        "fallback_used": true,
+        "source": "estimate",
+        "llm_model": null
+      },
+      "budget_breakdown": {
+        "name": "budget_breakdown",
+        "start_offset_s": 1.28,
+        "duration_s": 2.952,
+        "status": "done",
+        "fallback_used": false,
+        "source": null,
+        "llm_model": null
+      },
+      "currency_info": {
+        "name": "currency_info",
+        "start_offset_s": 1.281,
+        "duration_s": 3.685,
+        "status": "done",
+        "fallback_used": false,
+        "source": "open.er-api.com",
+        "llm_model": null
+      },
+      "transport_guide": {
+        "name": "transport_guide",
+        "start_offset_s": 1.28,
+        "duration_s": 4.381,
+        "status": "done",
+        "fallback_used": false,
+        "source": null,
+        "llm_model": null
+      },
+      "packing_list": {
+        "name": "packing_list",
+        "start_offset_s": 2.304,
+        "duration_s": 3.788,
+        "status": "done",
+        "fallback_used": false,
+        "source": null,
+        "llm_model": null
+      },
+      "hotels": {
+        "name": "hotels",
+        "start_offset_s": 1.279,
+        "duration_s": 11.7,
+        "status": "done",
+        "fallback_used": true,
+        "source": "nominatim",
+        "llm_model": null
+      },
+      "restaurants": {
+        "name": "restaurants",
+        "start_offset_s": 1.279,
+        "duration_s": 12.674,
+        "status": "done",
+        "fallback_used": false,
+        "source": "nominatim",
+        "llm_model": null
+      },
+      "attractions": {
+        "name": "attractions",
+        "start_offset_s": 1.279,
+        "duration_s": 16.235,
+        "status": "done",
+        "fallback_used": true,
+        "source": "ai_suggested",
+        "llm_model": null
+      },
+      "summary": {
+        "name": "summary",
+        "start_offset_s": 17.515,
+        "duration_s": 3.716,
+        "status": "done",
+        "fallback_used": false,
+        "source": null,
+        "llm_model": null
+      }
+    }
+  },
+  "generated_at": "2026-10-16"
+}

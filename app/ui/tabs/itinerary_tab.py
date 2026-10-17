@@ -3,9 +3,10 @@ Itinerary Tab UI component.
 Displays day-by-day itinerary inside expanders and provides a PDF download button.
 """
 import streamlit as st
+
 from app.agents.state import TripState
+from app.tools.booking_links import build_flight_booking_link, build_hotel_booking_link
 from app.tools.pdf_tools import export_itinerary_pdf
-from app.tools.booking_links import build_hotel_booking_link, build_flight_booking_link
 from app.ui.theme import render_timeline_html
 
 
@@ -44,7 +45,7 @@ def render_itinerary_tab(trip_result: TripState):
     # ── "Book This Trip" Section ──
     st.write("---")
     st.markdown("### 🛍️ Book This Trip")
-    st.caption("These links take you to Booking.com and Google Flights to search and complete your booking directly — this app does not process payments or hold live inventory.")
+    st.caption("These links take you to Booking.com and Google Flights to search and complete your booking directly — this app does not process payments or hold live inventory. Hotel prices are estimates; check live prices via the booking buttons.")
     
     flight_link = build_flight_booking_link(
         origin=trip_result.get("origin", "Delhi"),
@@ -88,3 +89,5 @@ def render_itinerary_tab(trip_result: TripState):
 
     # ── Day-by-day timeline ──
     st.markdown(render_timeline_html(itinerary), unsafe_allow_html=True)
+    st.write("---")
+    st.caption("Data sources: Foursquare, OpenStreetMap contributors. Curated landmarks marked with [AI-suggested].")

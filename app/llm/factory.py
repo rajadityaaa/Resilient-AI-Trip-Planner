@@ -1,22 +1,20 @@
-import os
+import json
 import logging
+import os
+import re
 import threading
 import time
-import json
-import re
-import requests
-from typing import Optional, Callable, Any
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+from contextvars import ContextVar
+from typing import Any, Callable, Optional
 
+import requests
+
+from app.config import get_settings
 
 logger = logging.getLogger(__name__)
 
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
+# ContextVar storing the last successfully invoked LLM model
+last_llm_model: ContextVar[Optional[str]] = ContextVar("last_llm_model", default=None)
 
 # Groq retired llama-3.1-8b-instant and llama-3.3-70b-versatile on 2026-08-16 (they now return 404).
 # Replacements recommended by Groq: openai/gpt-oss-20b (fast) and openai/gpt-oss-120b / qwen3.6-27b (smart).
@@ -66,11 +64,9 @@ def _strip_think(text: str) -> str:
     return re.sub(r"<think>[\s\S]*?</think>", "", text or "").strip()
 
 
-# ── Reliability controls ────────────────────────────────────────────────────
-# Agents run in parallel; without a limiter they all hit Groq in the same second and get 429s.
-# At most LLM_MAX_CONCURRENT calls are in flight; the rest wait their turn (usually < 2s).
-LLM_MAX_CONCURRENT = 3
-LLM_DEADLINE_S = 22          # one generate() call never takes longer than this (all providers combined)
+# Reliability controls
+LLM_MAX_CONCURRENT = get_settings().LLM_MAX_CONCURRENT
+LLM_DEADLINE_S = get_settings().LLM_DEADLINE_S
 _llm_slots = threading.Semaphore(LLM_MAX_CONCURRENT)
 
 
@@ -83,7 +79,9 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
     - 429: honours a short Retry-After and retries the same model once, otherwise next model.
     - Never exceeds `deadline` (absolute time.time() value).
     """
-    api_key = os.getenv("GROQ_API_KEY", "")
+    settings = get_settings()
+    env_key = os.getenv("GROQ_API_KEY")
+    api_key = env_key if env_key is not None else settings.GROQ_API_KEY.get_secret_value()
     if api_key == "invalid":
         raise ValueError("Simulated API Key failure.")
     if not api_key:
@@ -118,16 +116,25 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
             if remaining < 2:
                 raise RuntimeError(f"LLM deadline reached. Last error: {last_err}")
             try:
+                call_start = time.time()
                 response = requests.post(url, json=payload, headers=headers, timeout=min(20, remaining))
+                latency_ms = round((time.time() - call_start) * 1000, 1)
+
                 if response.status_code == 401:
                     raise ValueError("Unauthorized: Invalid API Key.")
                 if response.status_code in (404, 410) or "decommissioned" in response.text[:300]:
                     _dead_models.add(m)
                     last_err = f"{response.status_code} model unavailable: {m} ({response.text[:120]})"
-                    logger.warning(f"[LLM Factory] Groq model '{m}' unavailable - skipping. {response.text[:150]}")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status={response.status_code} "
+                        f"retries={attempt} prompt_len={len(prompt)} error=decommissioned"
+                    )
                     break
                 if response.status_code == 400 and extras and attempt == 0:
-                    logger.warning(f"[LLM Factory] '{m}' rejected reasoning params ({response.text[:120]}); retrying without.")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=400 "
+                        f"retries={attempt} prompt_len={len(prompt)} error=rejected_reasoning_params"
+                    )
                     payload = {k: v for k, v in payload.items() if k not in extras}
                     payload["max_tokens"] = max_tokens
                     continue
@@ -137,7 +144,10 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
                     except ValueError:
                         wait = 99.0
                     last_err = f"429 rate limit on {m}"
-                    logger.warning(f"[LLM Factory] Groq '{m}' rate limited (retry-after={wait}s).")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=429 "
+                        f"retries={attempt} prompt_len={len(prompt)} retry_after={wait}s"
+                    )
                     if attempt == 0 and wait <= 4 and deadline - time.time() > wait + 4:
                         time.sleep(wait + 0.2)
                         continue
@@ -146,15 +156,25 @@ def _call_groq(prompt: str, system_instruction: Optional[str] = None,
                 content = _strip_think(response.json()["choices"][0]["message"].get("content") or "")
                 if not content:
                     last_err = f"empty response from {m} (token budget used up by reasoning?)"
-                    logger.warning(f"[LLM Factory] {last_err}")
+                    logger.warning(
+                        f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=200 "
+                        f"retries={attempt} prompt_len={len(prompt)} error=empty_response"
+                    )
                     break
-                logger.info(f"[LLM Factory] Groq call succeeded with model: {m}")
+
+                last_llm_model.set(m)
+                logger.info(
+                    f"[LLM] provider=groq model={m} latency_ms={latency_ms} status=200 "
+                    f"retries={attempt} prompt_len={len(prompt)}"
+                )
                 return content
             except ValueError:
                 raise
             except Exception as e:
                 last_err = e
-                logger.warning(f"[LLM Factory] Groq model '{m}' failed: {e}")
+                logger.warning(
+                    f"[LLM] provider=groq model={m} retries={attempt} prompt_len={len(prompt)} failed: {e}"
+                )
                 break
 
     raise RuntimeError(f"All Groq models exhausted. Last error: {last_err}")
@@ -164,7 +184,9 @@ def _call_openrouter(prompt: str, system_instruction: Optional[str] = None,
                      model_name: str = "openrouter/free", max_tokens: int = 2048,
                      timeout: float = 25) -> str:
     """Call OpenRouter (fallback provider)."""
-    api_key = os.getenv("OPENROUTER_API_KEY", "")
+    settings = get_settings()
+    env_key = os.getenv("OPENROUTER_API_KEY")
+    api_key = env_key if env_key is not None else settings.OPENROUTER_API_KEY.get_secret_value()
     if not api_key:
         raise ValueError("OPENROUTER_API_KEY environment variable is not set.")
 
@@ -181,9 +203,24 @@ def _call_openrouter(prompt: str, system_instruction: Optional[str] = None,
     messages.append({"role": "user", "content": prompt})
     payload = {"model": model_name, "messages": messages, "temperature": 0.5, "max_tokens": max_tokens}
 
-    response = requests.post(url, json=payload, headers=headers, timeout=timeout)
-    response.raise_for_status()
-    return response.json()["choices"][0]["message"]["content"]
+    call_start = time.time()
+    try:
+        response = requests.post(url, json=payload, headers=headers, timeout=timeout)
+        latency_ms = round((time.time() - call_start) * 1000, 1)
+        response.raise_for_status()
+        last_llm_model.set(model_name)
+        logger.info(
+            f"[LLM] provider=openrouter model={model_name} latency_ms={latency_ms} status=200 "
+            f"retries=0 prompt_len={len(prompt)}"
+        )
+        return response.json()["choices"][0]["message"]["content"]
+    except Exception as exc:
+        latency_ms = round((time.time() - call_start) * 1000, 1)
+        logger.warning(
+            f"[LLM] provider=openrouter model={model_name} latency_ms={latency_ms} "
+            f"prompt_len={len(prompt)} failed: {exc}"
+        )
+        raise
 
 
 def get_llm(provider: str = "groq", model: str = FAST_MODEL, max_tokens: int = 1500) -> Callable[[str, Optional[str]], str]:
@@ -217,17 +254,20 @@ def get_llm(provider: str = "groq", model: str = FAST_MODEL, max_tokens: int = 1
     return generate
 
 
-def clean_json_response(text: str) -> Any:
+def clean_json_response(text: str, fallback: Any = None) -> Any:
     """
     Extract and parse JSON payload from LLM response text, stripping markdown code fences.
 
     Args:
         text: Raw text string from LLM output.
+        fallback: Optional fallback to return if parsing fails.
 
     Returns:
         Parsed JSON object (dict or list).
     """
     if not text or not text.strip():
+        if fallback is not None:
+            return fallback
         raise ValueError("Empty LLM response text.")
 
     cleaned = text.strip()
@@ -239,4 +279,12 @@ def clean_json_response(text: str) -> Any:
         if m_arr:
             cleaned = m_arr.group(1).strip()
 
-    return json.loads(cleaned)
+    try:
+        parsed = json.loads(cleaned)
+    except Exception:
+        if fallback is not None:
+            return fallback
+        raise
+
+    from app.security.sanitize import clip_strings
+    return clip_strings(parsed, max_len=2000)

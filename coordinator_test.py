@@ -7,6 +7,7 @@ Usage:
 """
 import asyncio
 import json
+
 from app.agents.coordinator import plan_trip
 
 
@@ -123,7 +124,7 @@ async def main():
     if errors:
         print_section(f"ERRORS ({len(errors)})", errors)
     else:
-        print(f"\n  OK - No errors -- all agents completed successfully.")
+        print("\n  OK - No errors -- all agents completed successfully.")
 
 
 if __name__ == "__main__":

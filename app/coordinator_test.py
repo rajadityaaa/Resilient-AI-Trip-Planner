@@ -7,16 +7,16 @@ Usage:
     python -m app.coordinator_test
 """
 import asyncio
+import io
 import json
 import sys
-import io
 
 # Fix Windows console encoding for Unicode (Hindi, CJK, etc. in OSM data)
 if sys.stdout.encoding != "utf-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-from app.agents.state import TripState
 from app.agents.coordinator import plan_trip
+from app.agents.state import TripState
 
 
 def build_test_state() -> TripState:

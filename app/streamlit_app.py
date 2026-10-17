@@ -1,5 +1,6 @@
-import sys
 import os
+import sys
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Streamlit Web Application: Main entry point for the AI Travel Planner.
@@ -8,16 +9,23 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import asyncio
 import traceback
+
 import streamlit as st
+
 from app.agents.coordinator import plan_trip
+from app.observability.logging import configure_logging
 from app.ui.sidebar import render_sidebar
-from app.ui.theme import get_custom_css, render_hero_section, render_footer_html
-from app.ui.tabs.overview_tab import render_overview_tab
-from app.ui.tabs.itinerary_tab import render_itinerary_tab
 from app.ui.tabs.budget_tab import render_budget_tab
-from app.ui.tabs.weather_tab import render_weather_tab
-from app.ui.tabs.map_tab import render_map_tab
 from app.ui.tabs.chat_tab import render_chat_tab
+from app.ui.tabs.insights_tab import render_insights_tab
+from app.ui.tabs.itinerary_tab import render_itinerary_tab
+from app.ui.tabs.map_tab import render_map_tab
+from app.ui.tabs.overview_tab import render_overview_tab
+from app.ui.tabs.weather_tab import render_weather_tab
+from app.ui.theme import get_custom_css, render_footer_html, render_hero_section
+
+# Configure structured/development logging once on startup
+configure_logging()
 
 # Page Configuration
 st.set_page_config(page_title="AI Travel Planner & Coordinator", layout="wide")
@@ -153,9 +161,18 @@ def main():
     # Render sidebar inputs
     form_inputs = render_sidebar()
 
-    # If sidebar is submitted, execute the plan
+    # If sidebar is submitted, execute the plan (with cooldown protection)
     if form_inputs:
-        execute_plan_trip(form_inputs)
+        import time
+        cooldown_s = 5.0
+        now = time.time()
+        last_submit = st.session_state.get("last_plan_submit_time", 0.0)
+        if now - last_submit < cooldown_s:
+            wait_rem = int(cooldown_s - (now - last_submit)) + 1
+            st.sidebar.warning(f"Please wait {wait_rem}s before planning another trip.")
+        else:
+            st.session_state["last_plan_submit_time"] = now
+            execute_plan_trip(form_inputs)
 
     # Initialize trip state cache if not present
     if "trip_result" not in st.session_state:
@@ -183,10 +200,11 @@ def main():
             "💵 Budget & Currency",
             "🌦️ Weather & Packing",
             "🗺️ Interactive Map",
-            "💬 AI Chat Assistant"
+            "💬 AI Chat Assistant",
+            "⏱️ Insights",
         ]
         
-        tab_overview, tab_itinerary, tab_budget, tab_weather, tab_map, tab_chat = st.tabs(tab_titles)
+        tab_overview, tab_itinerary, tab_budget, tab_weather, tab_map, tab_chat, tab_insights = st.tabs(tab_titles)
 
         with tab_overview:
             render_overview_tab(trip_result)
@@ -205,6 +223,9 @@ def main():
             
         with tab_chat:
             render_chat_tab(trip_result)
+
+        with tab_insights:
+            render_insights_tab(trip_result)
     else:
         # Landing hero screen — shown before any trip has been planned
         st.markdown(render_hero_section(), unsafe_allow_html=True)

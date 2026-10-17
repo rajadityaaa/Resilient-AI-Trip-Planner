@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Autonomous Trip Planner | Aetheria</title>
+  <meta name="description" content="Design your custom multi-day travel expedition with autonomous parallel AI agents, real Open-Meteo forecasts, and verified OpenStreetMap spots.">
+
+  <!-- Self-Hosted Modular Stylesheets -->
+  <link rel="stylesheet" href="../vendor/leaflet/leaflet.css?v=2">
+  <link rel="stylesheet" href="../css/tokens.css">
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/layout.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/sections/planner.css">
+  <link rel="stylesheet" href="../css/sections/generating.css?v=7">
+  <link rel="stylesheet" href="../css/sections/results.css?v=7">
+  <link rel="stylesheet" href="../css/sections/trips.css?v=7">
+  <link rel="stylesheet" href="../css/sections/chat.css?v=7">
+  <link rel="stylesheet" href="../css/sections/plan-page.css?v=7">
+  <link rel="stylesheet" href="../css/print.css" media="print">
+</head>
+<body>
+  <!-- Accessible Skip to Content -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Top Floating Header -->
+  <header class="site-header" role="banner">
+    <div class="container nav-container">
+      <a href="/" class="site-logo" aria-label="Aetheria Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span>Aetheria</span>
+        <span class="logo-tag">Planner</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Planner Navigation">
+        <a href="/" class="nav-link">← Home</a>
+        <a href="/#destinations-section" class="nav-link">Destinations</a>
+        <a href="/#how-it-works-section" class="nav-link">How It Works</a>
+        <a href="#/my-trips" class="nav-link">My Trips</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button type="button" id="plan-sample-btn" class="btn btn-secondary btn-sm">Sample Trip</button>
+        <a href="#/new" class="btn btn-primary btn-sm">New Trip</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Dynamic Animated Ambient Background -->
+  <div class="planner-ambient-canvas" aria-hidden="true">
+    <div class="ambient-glow orb-cyan"></div>
+    <div class="ambient-glow orb-gold"></div>
+    <div class="ambient-glow orb-purple"></div>
+    <div class="ambient-grid-mesh"></div>
+  </div>
+
+  <!-- Main Content Landmark -->
+  <main id="main-content" class="planner-page-main">
+    <div class="container">
+
+      <!-- Planner Section -->
+      <section class="planner-section" id="planner-section" aria-labelledby="plan-header-title">
+        <div class="plan-header-banner">
+          <h1 id="plan-header-title" class="plan-header-title">Autonomous Journey Engine</h1>
+          <p class="plan-header-sub">Configure your constraints across 3 simple steps. Ten specialist agents run concurrently to build your custom itinerary.</p>
+        </div>
+
+        <!-- 3-Step Wizard Navigation -->
+        <nav class="wizard-steps-nav" aria-label="Form Steps">
+          <button type="button" class="wizard-step-item active" data-step="1">
+            <span class="wizard-step-num">1</span>
+            <span>Trip Basics</span>
+          </button>
+          <div class="wizard-step-connector"></div>
+          <button type="button" class="wizard-step-item" data-step="2">
+            <span class="wizard-step-num">2</span>
+            <span>Preferences</span>
+          </button>
+          <div class="wizard-step-connector"></div>
+          <button type="button" class="wizard-step-item" data-step="3">
+            <span class="wizard-step-num">3</span>
+            <span>Review & Plan</span>
+          </button>
+        </nav>
+
+        <!-- 2-Column Split: Form Wizard & Live Summary Card -->
+        <div class="planner-workspace-grid">
+          <form id="planner-form" novalidate>
+
+            <!-- STEP 1: Trip Basics -->
+            <div class="wizard-panel active" data-step-panel="1">
+              <div class="planner-card">
+                <h3 style="margin-bottom: var(--space-md); color: #ffffff;">Step 1: Where & When</h3>
+
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label for="plan-origin" class="form-label">Departure City (Optional)</label>
+                    <input type="text" id="plan-origin" class="form-input" placeholder="e.g., San Francisco, CA" maxlength="80">
+                    <span class="form-hint">Used for accurate flight & transit estimations.</span>
+                  </div>
+
+                  <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                      <label for="plan-dest" class="form-label">Destination <span class="required">*</span></label>
+                      <label class="surprise-toggle" style="font-size: 11px; cursor: pointer; color: var(--color-accent-light);">
+                        <input type="checkbox" id="plan-surprise"> ✨ Surprise me
+                      </label>
+                    </div>
+                    <input type="text" id="plan-dest" class="form-input" placeholder="e.g., Kyoto, Japan" maxlength="80" required>
+                    <span class="form-hint">City, country, or geographical region.</span>
+                  </div>
+                </div>
+
+                <div class="form-grid-2" style="margin-top: var(--space-md);">
+                  <div class="form-group">
+                    <label for="plan-start-date" class="form-label">Departure Date <span class="required">*</span></label>
+                    <input type="date" id="plan-start-date" class="form-input" required>
+                  </div>
+
+                  <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                      <label for="plan-end-date" class="form-label">Return Date <span class="required">*</span></label>
+                      <span id="plan-duration-badge" class="duration-badge" style="display: none;"></span>
+                    </div>
+                    <input type="date" id="plan-end-date" class="form-input" required>
+                  </div>
+                </div>
+
+                <div class="form-grid-2" style="margin-top: var(--space-md);">
+                  <div class="form-group">
+                    <label class="form-label">Travelers</label>
+                    <div class="stepper-input">
+                      <button type="button" id="plan-travelers-minus" class="stepper-btn" aria-label="Decrease travelers" disabled>−</button>
+                      <span id="plan-travelers-value" class="stepper-value">1</span>
+                      <button type="button" id="plan-travelers-plus" class="stepper-btn" aria-label="Increase travelers">+</button>
+                    </div>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="plan-budget-total" class="form-label">Approximate Budget</label>
+                    <div class="budget-input-group">
+                      <select id="plan-budget-currency" class="form-select currency-select" aria-label="Currency">
+                        <option value="USD">USD ($)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="INR">INR (₹)</option>
+                        <option value="JPY">JPY (¥)</option>
+                        <option value="CAD">CAD ($)</option>
+                        <option value="AUD">AUD ($)</option>
+                      </select>
+                      <input type="number" id="plan-budget-total" class="form-input" placeholder="2500" min="100" max="1000000">
+                    </div>
+                  </div>
+                </div>
+
+                <div class="wizard-controls-row">
+                  <div></div>
+                  <button type="button" id="btn-wizard-next-1" class="btn btn-primary">Next: Preferences ➔</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 2: Preferences -->
+            <div class="wizard-panel" data-step-panel="2">
+              <div class="planner-card">
+                <h3 style="margin-bottom: var(--space-md); color: #ffffff;">Step 2: Travel Style & Activities</h3>
+
+                <div class="form-group">
+                  <label class="form-label">Travel Style (Select one or more)</label>
+                  <div class="style-selector">
+                    <label class="style-option selected" data-style="adventure">
+                      <input type="checkbox" name="travel_style" value="adventure" checked>
+                      <span class="style-icon">⛰️</span>
+                      <span class="style-label">Adventure</span>
+                    </label>
+                    <label class="style-option" data-style="relaxation">
+                      <input type="checkbox" name="travel_style" value="relaxation">
+                      <span class="style-icon">🌴</span>
+                      <span class="style-label">Relaxation</span>
+                    </label>
+                    <label class="style-option" data-style="luxury">
+                      <input type="checkbox" name="travel_style" value="luxury">
+                      <span class="style-icon">✨</span>
+                      <span class="style-label">Luxury</span>
+                    </label>
+                    <label class="style-option" data-style="cultural">
+                      <input type="checkbox" name="travel_style" value="cultural">
+                      <span class="style-icon">🏛️</span>
+                      <span class="style-label">Cultural</span>
+                    </label>
+                    <label class="style-option" data-style="backpacking">
+                      <input type="checkbox" name="travel_style" value="backpacking">
+                      <span class="style-icon">🎒</span>
+                      <span class="style-label">Backpacking</span>
+                    </label>
+                    <label class="style-option" data-style="family">
+                      <input type="checkbox" name="travel_style" value="family">
+                      <span class="style-icon">👨‍👩‍👧</span>
+                      <span class="style-label">Family</span>
+                    </label>
+                    <label class="style-option" data-style="romantic">
+                      <input type="checkbox" name="travel_style" value="romantic">
+                      <span class="style-icon">🍷</span>
+                      <span class="style-label">Romantic</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group" style="margin-top: var(--space-lg);">
+                  <div class="preferences-header">
+                    <label class="form-label">Preferred Activities</label>
+                    <span id="plan-pref-counter" class="preferences-counter">0/10</span>
+                  </div>
+                  <div class="chips-group">
+                    <button type="button" class="chip" data-pref="ancient temples">⛩️ Temples</button>
+                    <button type="button" class="chip" data-pref="art museums">🏛️ Museums</button>
+                    <button type="button" class="chip" data-pref="street food markets">🍜 Street Food</button>
+                    <button type="button" class="chip" data-pref="nightlife & bars">🍸 Nightlife</button>
+                    <button type="button" class="chip" data-pref="nature hiking">🥾 Hiking</button>
+                    <button type="button" class="chip" data-pref="coastal beaches">🏖️ Beaches</button>
+                    <button type="button" class="chip" data-pref="local craft markets">🛍️ Markets</button>
+                    <button type="button" class="chip" data-pref="scenic photography">📷 Photography</button>
+                    <button type="button" class="chip" data-pref="wellness & spa">💆 Wellness</button>
+                    <button type="button" class="chip" data-pref="fine dining">🍽️ Fine Dining</button>
+                  </div>
+                </div>
+
+                <div class="custom-prefs-grid" style="margin-top: var(--space-lg);">
+                  <div class="form-group">
+                    <label for="plan-pref-stay" class="form-label">Accommodation</label>
+                    <input type="text" id="plan-pref-stay" class="form-input" placeholder="e.g., Boutique ryokan" maxlength="44">
+                  </div>
+                  <div class="form-group">
+                    <label for="plan-pref-transit" class="form-label">Transit</label>
+                    <input type="text" id="plan-pref-transit" class="form-input" placeholder="e.g., Shinkansen" maxlength="39">
+                  </div>
+                  <div class="form-group">
+                    <label for="plan-pref-diet" class="form-label">Dietary / Needs</label>
+                    <input type="text" id="plan-pref-diet" class="form-input" placeholder="e.g., Vegetarian" maxlength="44">
+                  </div>
+                </div>
+
+                <div class="wizard-controls-row">
+                  <button type="button" id="btn-wizard-back-2" class="btn btn-outline">← Back</button>
+                  <button type="button" id="btn-wizard-next-2" class="btn btn-primary">Next: Review & Launch ➔</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- STEP 3: Review and Plan -->
+            <div class="wizard-panel" data-step-panel="3">
+              <div class="planner-card">
+                <h3 style="margin-bottom: var(--space-sm); color: #ffffff;">Step 3: Review Expedition & Launch</h3>
+                <p style="color: var(--color-text-secondary); font-size: 13px; margin-bottom: var(--space-lg);">Verify your parameters. Submitting dispatches parallel agent research across climate models, live geocoding, and budget split engines.</p>
+
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-md); padding: var(--space-md); margin-bottom: var(--space-lg);">
+                  <div style="display: flex; align-items: center; gap: 8px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
+                    <span>🛡️ Strict Provenance & Safety</span>
+                  </div>
+                  <p style="font-size: 12px; color: var(--color-text-muted); line-height: 1.5; margin: 0;">
+                    All suggested spots originate from real OpenStreetMap nodes. Weather forecasts are derived from Open-Meteo API. Pricing figures are transparent estimates.
+                  </p>
+                </div>
+
+                <div class="planner-actions" style="display: flex; align-items: center; justify-content: space-between; gap: var(--space-md); flex-wrap: wrap;">
+                  <button type="button" id="btn-wizard-back-3" class="btn btn-outline">← Adjust Details</button>
+                  <div style="display: flex; gap: var(--space-sm);">
+                    <button type="button" id="plan-reset-btn" class="btn btn-ghost btn-sm">Reset</button>
+                    <button type="submit" id="plan-submit-btn" class="btn btn-primary btn-lg">Plan my journey ➔</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </form>
+
+          <!-- Live Trip Summary Sidebar -->
+          <aside class="live-summary-card" aria-label="Live Expedition Summary">
+            <div class="summary-card-title">
+              <span>Expedition Summary</span>
+              <span>LIVE</span>
+            </div>
+
+            <div id="summary-dest-val" class="summary-destination-badge">Your Next Destination</div>
+
+            <div class="summary-meta-list">
+              <div class="summary-meta-row">
+                <span>Dates</span>
+                <strong id="summary-dates-val">Dates pending</strong>
+              </div>
+              <div class="summary-meta-row">
+                <span>Travelers</span>
+                <strong id="summary-travelers-val">1 Traveler</strong>
+              </div>
+              <div class="summary-meta-row">
+                <span>Budget</span>
+                <strong id="summary-budget-val">USD 2,500</strong>
+              </div>
+            </div>
+
+            <div style="font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; margin-bottom: 6px;">Tags & Styles</div>
+            <div id="summary-tags-container" class="summary-tags-wrap">
+              <span class="summary-mini-tag">Adventure</span>
+            </div>
+
+            <div class="summary-agent-readiness">
+              <span>⚡</span>
+              <span>10 Agents ready for synthesis</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- Generating State (Real SSE Events) -->
+      <section class="section-wrapper generating-section" id="generating-section" aria-live="polite">
+        <div class="container">
+          <div class="generating-card">
+            <div class="generating-header">
+              <h2>Specialist Agents at Work</h2>
+              <p class="generating-subtext">Executing parallel research pipelines. Watch each stage resolve in real time.</p>
+            </div>
+
+            <!-- Overall Progress Bar -->
+            <div class="progress-bar-container">
+              <div class="progress-bar-header">
+                <span>Overall Synthesis Progress</span>
+                <span id="progress-percent">0%</span>
+              </div>
+              <div class="progress-track">
+                <div id="progress-fill" class="progress-fill"></div>
+              </div>
+            </div>
+
+            <!-- Real Stage List -->
+            <div id="stages-list" class="stages-list"></div>
+
+            <div class="generating-footer">
+              <span>Server response active</span>
+              <span>Elapsed: <strong id="elapsed-timer">0s</strong></span>
+            </div>
+
+            <!-- Server Wakeup Notice -->
+            <div id="cold-start-notice" class="cold-start-notice">
+              Waking up server environment. This may take up to a minute on initial connection.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results View Dashboard -->
+      <section class="section-wrapper results-section" id="results-section" aria-labelledby="results-title">
+        <div class="container">
+          <!-- Dashboard Header Card -->
+          <div class="results-hero-card">
+            <div class="results-meta-strip">
+              <div class="results-meta-item">📍 <span id="results-meta-dest"></span></div>
+              <div class="results-meta-item">📅 <span id="results-meta-dates"></span></div>
+              <div class="results-meta-item">👥 <span id="results-meta-travelers"></span></div>
+              <div class="results-meta-item">💰 <span id="results-meta-budget"></span></div>
+            </div>
+            <h2 id="results-title" class="results-title">Your Custom Expedition</h2>
+            <p id="results-overview" class="results-overview"></p>
+
+            <!-- Fallback / Backup Data Banner -->
+            <div id="backup-data-banner" class="backup-data-banner">
+              <div class="backup-banner-header">
+                <span class="backup-banner-title">✨ Autonomous Curation Notice</span>
+                <button type="button" id="backup-banner-close" class="backup-banner-close" aria-label="Dismiss notice">✕</button>
+              </div>
+              <div class="backup-banner-desc">Some items were intelligently curated using AI recommendations to ensure a complete itinerary:</div>
+              <ul id="backup-data-list"></ul>
+            </div>
+
+            <!-- Actions Bar -->
+            <div class="results-actions-bar">
+              <button type="button" id="results-btn-share" class="btn btn-secondary btn-sm">🔗 Copy Share Link</button>
+              <button type="button" id="results-btn-save" class="btn btn-secondary btn-sm">💾 Save to My Trips</button>
+              <button type="button" id="results-btn-print" class="btn btn-outline btn-sm">🖨️ Print / Save as PDF</button>
+              <button type="button" id="results-btn-pdf" class="btn btn-outline btn-sm">📄 Download PDF</button>
+              <button type="button" id="results-btn-ics" class="btn btn-outline btn-sm">📅 Add to Calendar (.ics)</button>
+              <button type="button" id="results-btn-replan" class="btn btn-ghost btn-sm text-accent">↺ Re-plan with changes</button>
+            </div>
+          </div>
+
+          <!-- Sticky Sub-Navigation Tabs -->
+          <nav class="dashboard-subnav" aria-label="Itinerary Sections">
+            <div class="tab-list" role="tablist">
+              <button type="button" class="tab-btn" role="tab" aria-selected="true" data-target="tab-itinerary">Itinerary</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-map">Map Overview</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-hotels">Accommodations</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-food">Dining</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-weather">Weather & Transit</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-budget">Budget Split</button>
+              <button type="button" class="tab-btn" role="tab" aria-selected="false" data-target="tab-assistant">Refine & Chat</button>
+            </div>
+          </nav>
+
+          <!-- Tab 1: Day-by-Day Itinerary -->
+          <div id="tab-itinerary" class="tab-panel active" role="tabpanel">
+            <div class="itinerary-controls">
+              <button type="button" id="btn-expand-all" class="btn btn-ghost btn-sm">Expand all days</button>
+              <button type="button" id="btn-collapse-all" class="btn btn-ghost btn-sm">Collapse all days</button>
+            </div>
+            <div id="itinerary-container"></div>
+          </div>
+
+          <!-- Tab 2: Map Overview -->
+          <div id="tab-map" class="tab-panel" role="tabpanel">
+            <div class="map-container-wrapper">
+              <div id="map-view"></div>
+            </div>
+          </div>
+
+          <!-- Tab 3: Accommodations (Stay) -->
+          <div id="tab-hotels" class="tab-panel" role="tabpanel">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px;">
+              <h3>Curated Accommodations</h3>
+              <span class="badge badge-estimate">Prices Estimated · Check booking links</span>
+            </div>
+            <div id="hotels-container" class="cards-grid-3"></div>
+          </div>
+
+          <!-- Tab 4: Dining -->
+          <div id="tab-food" class="tab-panel" role="tabpanel">
+            <h3 style="margin-bottom: 16px;">Authentic Dining Suggestions</h3>
+            <div id="restaurants-container" class="cards-grid-3"></div>
+          </div>
+
+          <!-- Tab 5: Weather & Transit -->
+          <div id="tab-weather" class="tab-panel" role="tabpanel">
+            <h3 style="margin-bottom: 16px;">Daily Weather Forecast</h3>
+            <div id="weather-container" class="weather-strip"></div>
+
+            <h3 style="margin-top: 24px; margin-bottom: 16px;">Local Transportation Guide</h3>
+            <div id="transport-container" class="glass-card" style="margin-bottom: 24px;"></div>
+
+            <h3 style="margin-top: 24px; margin-bottom: 16px;">Essential Packing Checklist</h3>
+            <div id="packing-container"></div>
+          </div>
+
+          <!-- Tab 6: Budget Split -->
+          <div id="tab-budget" class="tab-panel" role="tabpanel">
+            <div class="budget-panel-header" style="margin-bottom: 24px;">
+              <h3 style="font-size: 1.35rem; font-weight: 700; margin-bottom: 6px;">Target Budget Allocation</h3>
+              <p class="text-sm text-muted">Intelligent financial distribution calculated across lodging, dining, transit, sights, and buffer.</p>
+            </div>
+            <div class="budget-dashboard">
+              <div class="donut-chart-container">
+                <div id="budget-svg-container"></div>
+                <div class="donut-center-text">
+                  <span class="text-xs text-muted">Total Budget</span>
+                  <span id="budget-donut-center" class="donut-center-amount"></span>
+                </div>
+              </div>
+              <div id="budget-table-container"></div>
+            </div>
+
+            <div class="budget-advisory-card" style="margin-top: 24px;">
+              <h4 style="font-size: 1.05rem; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <span>💳</span> Local Financial Advisory & Currency Guidance
+              </h4>
+              <div id="budget-advisory-notes" class="budget-advisory-grid"></div>
+            </div>
+          </div>
+
+          <!-- Tab 7: AI Travel Assistant & Chat -->
+          <div id="tab-assistant" class="tab-panel" role="tabpanel">
+            <div class="assistant-panel">
+              <div class="assistant-panel-header">
+                <div class="assistant-status-row">
+                  <span class="assistant-avatar">✨</span>
+                  <div>
+                    <h4>Interactive AI Travel Assistant</h4>
+                    <p class="text-sm text-muted">Direct agentic consultant with complete visibility of your destination, places, and budget.</p>
+                  </div>
+                </div>
+                <div class="assistant-badge-live">
+                  <span class="live-dot"></span> Online & Ready
+                </div>
+              </div>
+
+              <div id="assistant-messages" class="assistant-messages" role="log" aria-live="polite"></div>
+
+              <div class="assistant-suggestions-wrapper">
+                <div class="assistant-suggestions-label">💡 Suggested inquiries (click to test):</div>
+                <div id="assistant-suggestions" class="assistant-suggestions"></div>
+              </div>
+
+              <form id="assistant-form" class="assistant-input-bar">
+                <input type="text" id="assistant-input" class="assistant-input" placeholder="Ask questions, swap activities, or refine your itinerary pacing..." maxlength="300" required>
+                <button type="submit" class="btn btn-primary assistant-send-btn" aria-label="Send message">
+                  <span>Send</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <line x1="22" y1="2" x2="11" y2="13"></line>
+                    <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                  </svg>
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Timeline Section -->
+          <div id="timeline-section" class="timeline-section">
+            <div class="timeline-header">
+              <h3>Behind the Plan: Real Multi-Agent Timeline</h3>
+              <p id="timeline-subtitle" class="text-muted"></p>
+            </div>
+            <div id="timeline-container" class="timeline-tracks"></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- My Trips Modal View -->
+  <div id="my-trips-backdrop" class="modal-backdrop"></div>
+  <aside id="my-trips-modal" class="modal-card" role="dialog" aria-modal="true" aria-labelledby="my-trips-title">
+    <div class="modal-header">
+      <div>
+        <h3 id="my-trips-title" class="modal-title">My Saved Expeditions</h3>
+        <p class="modal-subtitle">Trips saved locally on this browser. Private trip IDs are never exposed.</p>
+      </div>
+      <div class="modal-header-actions">
+        <button type="button" id="btn-clear-all-trips" class="btn btn-outline btn-sm text-error" style="display: none;">Clear all</button>
+        <button type="button" id="my-trips-close" class="modal-close-btn" aria-label="Close dialog">✕</button>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div id="saved-trips-grid" class="saved-trips-grid"></div>
+      <div id="empty-trips-state" class="empty-trips-state" style="display: none;">
+        <div class="empty-trips-icon">🗺️</div>
+        <h4>No journeys saved yet</h4>
+        <p class="text-sm text-muted">Plan your next expedition and click "Save to My Trips" to see your itineraries here.</p>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-content">
+      <div class="footer-grid">
+        <div class="footer-col brand-col">
+          <div class="footer-logo">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+            <span>Aetheria</span>
+          </div>
+          <p class="footer-tagline">Autonomous agentic travel intelligence for custom expeditions.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/#destinations-section">Destinations</a></li>
+            <li><a href="/#how-it-works-section">How It Works</a></li>
+            <li><a href="#/my-trips">My Trips</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Data & Credits</h4>
+          <ul>
+            <li><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap (ODbL)</a></li>
+            <li><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo Weather</a></li>
+            <li><a href="../assets/CREDITS.md" target="_blank" rel="noopener noreferrer">Photography Credits</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Project Code</h4>
+          <ul>
+            <li><a href="https://github.com/rajadityaaa/Travel-Planner-Agent.git" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+            <li><a href="/docs" target="_blank" rel="noopener noreferrer">FastAPI Swagger Docs ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="student-disclaimer">
+          <strong>Academic & Portfolio Notice:</strong> Aetheria is a student research and engineering project demonstrating multi-agent workflows. No direct bookings or transactions are executed through this application; prices and room rates are estimates.
+        </div>
+        <div>
+          &copy; 2026 Aetheria Travel Planner Agent. MIT License.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="../vendor/leaflet/leaflet.js?v=2" defer></script>
+  <script type="module" src="../js/plan-main.js?v=7"></script>
+</body>
+</html>

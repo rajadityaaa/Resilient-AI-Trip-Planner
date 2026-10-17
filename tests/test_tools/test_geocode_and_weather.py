@@ -5,11 +5,15 @@ Uses standard library unittest so it runs everywhere.
 import time
 import unittest
 from datetime import datetime, timedelta
+
+import pytest
+
 from app.tools.cache import cache_clear
-from app.tools.geocode_tools import geocode_place, GeocodeNotFoundError
+from app.tools.geocode_tools import GeocodeNotFoundError, geocode_place
 from app.tools.weather_tools import get_forecast
 
 
+@pytest.mark.network
 class TestGeocodeAndWeather(unittest.TestCase):
 
     def test_geocode_place_success(self):

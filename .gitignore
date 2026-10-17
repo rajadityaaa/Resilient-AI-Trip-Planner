@@ -43,3 +43,8 @@ htmlcov/
 build/
 dist/
 *.egg-info/
+
+# SQLite databases
+data/*.db
+data/*.db-wal
+data/*.db-shm

@@ -1,12 +1,19 @@
 """
-Attraction Agent: Fetches points of interest via Overpass and ranks them using LLM against user preferences.
+Attraction Agent: Fetches points of interest via Provider Registry (Foursquare -> Overpass -> Nominatim -> AI)
+and ranks them using LLM against user preferences.
 """
-import json
+from __future__ import annotations
+
+import asyncio
+import logging
+import math
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
-from app.llm.prompts.attraction_ranking_prompt import build_attraction_ranking_prompt
+from app.llm.factory import FAST_MODEL, clean_json_response, get_llm
+from app.providers.registry import search_places
 from app.tools.geocode_tools import geocode_place
-from app.tools.places_tools import get_attractions
+
+logger = logging.getLogger(__name__)
 
 
 def _init_errors(state: TripState):
@@ -14,32 +21,39 @@ def _init_errors(state: TripState):
         state["errors"] = []
 
 
-def _nominatim_places(kind: str, geo: dict) -> list:
-    """Second real-data source (no LLM needed): Nominatim search inside a box around the city centre."""
-    from app.tools.geocode_tools import search_places_nearby
-    if kind == "attractions":
-        queries, delta = ["tourist attraction", "museum", "temple", "park"], 0.05
-    else:
-        queries, delta = ["restaurant", "cafe"], 0.025
-    out, seen = [], set()
-    for q in queries:
-        for it in search_places_nearby(q, geo["lat"], geo["lon"], delta=delta, limit=15):
-            key = it["name"].lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            out.append({"name": it["name"], "category": (it.get("type") or q).replace("_", " ").capitalize(),
-                        "lat": it["lat"], "lon": it["lon"], "tags": {}})
-    return out[:20]
+def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate approximate distance between two GPS coordinates in meters."""
+    x = (lon2 - lon1) * math.cos(math.radians((lat1 + lat2) / 2)) * 111320.0
+    y = (lat2 - lat1) * 110540.0
+    return math.sqrt(x * x + y * y)
 
 
-def _ai_place_fallback(kind: str, dest: str, prefs: list, geo: dict) -> list:
-    """OSM returned nothing -> ask the LLM for well-known real places. Flagged as AI-suggested."""
+def _name_similarity(n1: str, n2: str) -> bool:
+    """Return True if two landmark names are likely variations of the same place."""
+    s1, s2 = n1.lower().strip(), n2.lower().strip()
+    if s1 == s2:
+        return True
+    if len(s1) >= 4 and len(s2) >= 4:
+        if s1 in s2 or s2 in s1:
+            return True
+    w1 = set(s1.replace("(", " ").replace(")", " ").replace("-", " ").split())
+    w2 = set(s2.replace("(", " ").replace(")", " ").replace("-", " ").split())
+    common = w1.intersection(w2)
+    stop = {"the", "of", "and", "in", "at", "near", "a", "temple", "museum", "park"}
+    sig_common = [w for w in common if w not in stop and len(w) >= 3]
+    return len(sig_common) > 0
+
+
+def _ai_place_fallback(kind: str, dest: str, prefs: list, geo: dict, count: int = 8) -> list:
+    """Ask the LLM for 8 famous, real attractions in destination matching user preferences."""
     from app.llm.prompts.place_fallback_prompt import build_place_fallback_prompt
-    from app.llm.factory import SMART_MODEL
-    llm = get_llm(model=SMART_MODEL, max_tokens=1800)
+    llm = get_llm(model=FAST_MODEL, max_tokens=1800)
     prompt = build_place_fallback_prompt(kind, dest, prefs, geo["lat"], geo["lon"])
-    items = clean_json_response(llm(prompt))
+    try:
+        items = clean_json_response(llm(prompt))
+    except Exception:
+        retry_instruction = "\n\nCRITICAL: Respond with ONLY valid JSON array with no extra text."
+        items = clean_json_response(llm(prompt + retry_instruction))
     if isinstance(items, dict):
         items = [items]
     out, seen = [], set()
@@ -53,16 +67,26 @@ def _ai_place_fallback(kind: str, dest: str, prefs: list, geo: dict) -> list:
             if abs(lat - geo["lat"]) > 0.5 or abs(lon - geo["lon"]) > 0.5:
                 raise ValueError
         except Exception:
-            lat, lon = geo["lat"], geo["lon"]      # keep pin near the city centre if AI coords are off
-        out.append({"name": name, "category": it.get("category", kind.capitalize()), "lat": lat, "lon": lon,
-                    "match_reason": it.get("match_reason", ""), "source": "ai_suggested"})
-    return out[:10]
+            lat, lon = geo["lat"], geo["lon"]
+        out.append({
+            "name": name,
+            "category": it.get("category", "Attraction"),
+            "lat": lat,
+            "lon": lon,
+            "match_reason": it.get("match_reason", ""),
+            "source": "ai_suggested",
+            "tags": {},
+        })
+    return out[:count]
 
 
 async def get_attractions_for_trip(state: TripState) -> TripState:
     """
-    Fetch attractions near destination and rank them using LLM.
-    Capped at top 10 items.
+    Fetch attractions near destination combining:
+    1. Up to 6 AI-suggested famous landmarks matching user preferences.
+    2. Up to 6 best real places from the provider chain (Overpass -> Nominatim).
+    Deduplicated by case-insensitive name & distance < 150m, capped at 12 in total.
+    Runs AI and provider lookups concurrently in parallel.
     """
     _init_errors(state)
 
@@ -79,65 +103,141 @@ async def get_attractions_for_trip(state: TripState) -> TripState:
 
     try:
         geo = geocode_place(dest)
-        raw_attractions = get_attractions(geo["lat"], geo["lon"], radius_m=5000, limit=20)
+        prefs = state.get("preferences", []) or []
 
-        if not raw_attractions:
-            # OSM empty: famous-landmark suggestions from the AI are the best tourist list; real-data search is the backup.
+        def _fetch_ai_landmarks() -> list[dict]:
             try:
-                ai_list = _ai_place_fallback("attractions", dest, state.get("preferences", []), geo)
-            except Exception:
-                ai_list = []
-            if ai_list:
-                state["attractions"] = ai_list
-                state["errors"].append({"agent": "attraction_agent", "message": "attraction_agent: OpenStreetMap had no data; AI-suggested landmarks used"})
-                return state
-            raw_attractions = _nominatim_places("attractions", geo)
-            if not raw_attractions:
-                state["attractions"] = []
-                return state
+                return _ai_place_fallback("attractions", dest, prefs, geo, count=8)
+            except Exception as exc:
+                logger.warning(f"[AttractionAgent] AI landmark lookup failed: {exc}")
+                return []
 
-        # Use LLM to rank and filter raw attractions according to user preferences
-        try:
-            llm = get_llm()
-            prompt = build_attraction_ranking_prompt(state.get("preferences", []), raw_attractions)
-            resp_text = llm(prompt)
-            
+        def _fetch_provider_attractions() -> list[dict]:
             try:
-                ranked = clean_json_response(resp_text)
-            except json.JSONDecodeError:
-                # Retry once with stricter formatting instructions
-                retry_instruction = "\n\nCRITICAL: Respond with ONLY valid JSON, no trailing commas, no comments, and properly escaped quotes."
-                resp_text = llm(prompt + retry_instruction)
-                try:
-                    ranked = clean_json_response(resp_text)
-                except json.JSONDecodeError:
-                    # Log a non-technical error and fall back to raw list slice
-                    state["errors"].append({
-                        "agent": "attraction_agent",
-                        "message": "attraction_agent: LLM response could not be parsed after retry, using raw attractions"
-                    })
-                    state["attractions"] = raw_attractions[:10]
-                    return state
+                raw, _ = search_places(
+                    kind="attractions",
+                    lat=geo["lat"],
+                    lon=geo["lon"],
+                    radius_m=5000,
+                    limit=20,
+                    destination=dest,
+                    preferences=prefs,
+                )
+                return raw
+            except Exception as exc:
+                logger.warning(f"[AttractionAgent] Provider lookup failed: {exc}")
+                return []
 
-            if isinstance(ranked, list) and len(ranked) > 0:
-                # Deduplicate by name (LLM may repeat entries)
-                seen = set()
-                deduped = []
-                for a in ranked:
-                    aname = (a.get("name") or "").strip().lower()
-                    if aname and aname not in seen:
-                        seen.add(aname)
-                        deduped.append(a)
-                state["attractions"] = deduped[:10]
-            else:
-                state["attractions"] = raw_attractions[:10]
-        except Exception:
-            # Fall back to raw list slice if LLM fails
-            state["attractions"] = raw_attractions[:10]
+        # Run LLM landmark call and provider chain lookup concurrently
+        ai_places, real_places = await asyncio.gather(
+            asyncio.to_thread(_fetch_ai_landmarks),
+            asyncio.to_thread(_fetch_provider_attractions),
+        )
+
+        # Rank real places matching preferences higher than ones that don't
+        if prefs and real_places:
+            pref_terms = [p.lower() for p in prefs]
+            expanded = set(pref_terms)
+            for t in pref_terms:
+                if t.endswith("s") and len(t) > 3:
+                    expanded.add(t[:-1])
+
+            def _score_real(r: dict) -> int:
+                score = 0
+                name = (r.get("name") or "").lower()
+                cat = (r.get("category") or "").lower()
+                tags = r.get("tags") or {}
+                for term in expanded:
+                    if term in name:
+                        score += 3
+                    if term in cat:
+                        score += 2
+                    if any(term in str(v).lower() for v in tags.values()):
+                        score += 2
+                return score
+
+            real_places.sort(key=_score_real, reverse=True)
+
+        # Merge: AI-suggested first (up to 6), then best real places (up to 6)
+        # Deduplicated by case-insensitive name & distance < 150m for similar names
+        merged = []
+        seen_names = set()
+
+        def _is_duplicate(item: dict) -> bool:
+            iname = (item.get("name") or "").strip().lower()
+            if not iname or iname in seen_names:
+                return True
+            ilat, ilon = item.get("lat"), item.get("lon")
+            for ex in merged:
+                ename = (ex.get("name") or "").strip().lower()
+                if iname == ename:
+                    return True
+                elat, elon = ex.get("lat"), ex.get("lon")
+                if ilat is not None and ilon is not None and elat is not None and elon is not None:
+                    try:
+                        dist = _haversine_m(float(ilat), float(ilon), float(elat), float(elon))
+                        if dist < 150 and _name_similarity(iname, ename):
+                            return True
+                    except Exception:
+                        pass
+            return False
+
+        # Add up to 6 AI-suggested landmarks
+        ai_added = 0
+        for a in ai_places:
+            if not _is_duplicate(a):
+                seen_names.add(a["name"].strip().lower())
+                merged.append(a)
+                ai_added += 1
+                if ai_added >= 6:
+                    break
+
+        # Add up to 6 real places
+        real_added = 0
+        for r in real_places:
+            if not _is_duplicate(r):
+                seen_names.add(r["name"].strip().lower())
+                merged.append(r)
+                real_added += 1
+                if real_added >= 6 or len(merged) >= 12:
+                    break
+
+        # Fallback if both returned nothing
+        if not merged:
+            if real_places:
+                merged = real_places[:10]
+            elif ai_places:
+                merged = ai_places[:10]
+
+        state["attractions"] = merged[:12]
 
     except Exception as err:
         state["errors"].append({"agent": "attraction_agent", "message": str(err)})
         state["attractions"] = []
 
+    if not state.get("attractions"):
+        state["attractions"] = _placeholder_attractions(dest)
+
     return state
 
+
+def _placeholder_attractions(dest: str) -> list[dict]:
+    dest_name = dest.title() if dest else "City"
+    return [
+        {
+            "name": f"Historic Old Town & Central Square ({dest_name})",
+            "category": "Historic Site",
+            "lat": 0.0,
+            "lon": 0.0,
+            "source": "fallback",
+            "tags": {"tourism": "attraction"},
+        },
+        {
+            "name": f"National Cultural Landmark ({dest_name})",
+            "category": "Monument",
+            "lat": 0.0,
+            "lon": 0.0,
+            "source": "fallback",
+            "tags": {"tourism": "attraction"},
+        },
+    ]

@@ -3,6 +3,7 @@ Booking Links Generator: Compiles search handoff links for flights and hotels.
 """
 import urllib.parse
 
+
 def build_hotel_booking_link(hotel_name: str, destination: str) -> str:
     """
     Generate a Booking.com search results link for a given hotel and destination.

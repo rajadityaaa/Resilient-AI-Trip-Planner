@@ -7,8 +7,6 @@ via st.markdown(..., unsafe_allow_html=True).  They centralise all markup so
 tab modules never duplicate styling.
 """
 
-import textwrap
-from typing import Optional
 
 
 # ──────────────────────────────────────────────────────────────────────────────

@@ -1,9 +1,10 @@
 """
 Currency Tools: Frankfurter API wrapper for exchange rates with 12-hour TTL caching.
 """
-import requests
 from datetime import datetime
-from typing import Optional
+
+import requests
+
 from app.tools.cache import cache_get, cache_set
 
 
@@ -71,7 +72,7 @@ def convert_currency(amount: float, from_code: str, to_code: str) -> dict:
 
         rate = float(rates[to_curr])
         date_val = data.get("date", today_str)
-    except Exception as err:
+    except Exception:
         # Default 1.0 fallback on failure to avoid crashing
         rate = 1.0
         date_val = today_str

@@ -2,11 +2,11 @@
 Destination Agent: Suggests candidate destinations when state["destination"] is None.
 """
 import json
-from typing import Optional
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
+from app.llm.factory import clean_json_response, get_llm
 from app.llm.prompts.destination_prompt import build_destination_prompt
-from app.tools.geocode_tools import geocode_place, GeocodeNotFoundError
+from app.tools.geocode_tools import geocode_place
 
 
 def _init_errors(state: TripState):

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aetheria | Cinematic AI Travel Planner</title>
+  <meta name="description" content="Experience autonomous journey design powered by ten specialist AI agents, live Open-Meteo forecasts, and verified OpenStreetMap places.">
+
+  <!-- Preload Critical Fonts & First Hero Image for Rapid LCP -->
+  <link rel="preload" href="assets/fonts/manrope-400.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/plus-jakarta-sans-800.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/img/hero-1-santorini-768.webp" as="image" type="image/webp" media="(max-width: 768px)">
+  <link rel="preload" href="assets/img/hero-1-santorini-1280.webp" as="image" type="image/webp" media="(min-width: 769px)">
+
+  <!-- Open Graph & Social Sharing -->
+  <meta property="og:title" content="Aetheria | Cinematic AI Travel Planner">
+  <meta property="og:description" content="Autonomous journey design powered by parallel specialist AI agents and authentic geospatial data.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/img/hero-1-santorini-1280.jpg">
+  <meta name="theme-color" content="#080c14">
+
+  <!-- Self-Hosted Modular Stylesheets -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css?v=2">
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/sections/hero.css">
+  <link rel="stylesheet" href="css/landing.css">
+  <link rel="stylesheet" href="css/print.css" media="print">
+</head>
+<body class="landing-body">
+  <!-- Accessible Skip to Content -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Top Floating Header -->
+  <header class="site-header" role="banner">
+    <div class="container nav-container">
+      <a href="/" class="site-logo" aria-label="Aetheria Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+        </svg>
+        <span>Aetheria</span>
+        <span class="logo-tag">Agentic</span>
+      </a>
+
+      <nav class="desktop-nav" aria-label="Primary Navigation">
+        <a href="#itinerary-preview-section" class="nav-link">Itinerary & Map</a>
+        <a href="#simulation-section" class="nav-link">Agents in Action</a>
+        <a href="#mood-explorer-section" class="nav-link">Mood Explorer</a>
+        <a href="#destinations-section" class="nav-link">Destinations</a>
+        <a href="#how-it-works-section" class="nav-link">How It Works</a>
+      </nav>
+
+      <div class="nav-actions">
+        <button type="button" id="day-night-toggle" class="hero-icon-btn" title="Toggle Day / Night lighting" aria-label="Toggle day or night mode">☀️</button>
+        <a href="/plan/" class="btn btn-primary btn-sm">Plan my trip</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sticky Floating Plan CTA -->
+  <a href="/plan/" id="sticky-plan-fab" class="sticky-plan-fab" aria-label="Plan your expedition">
+    <span>✨ Plan my trip ➔</span>
+  </a>
+
+  <!-- Main Content Landmark -->
+  <main id="main-content">
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         1. HERO SECTION: Full-Viewport Photo Slideshow with Layered Atmosphere
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="hero-atmosphere-viewport" id="hero-section" aria-label="Cinematic Travel Showcase">
+
+      <!-- Layer 0: Photo Slideshow -->
+      <div class="hero-slideshow-container" aria-hidden="true">
+        <!-- Scene 1: Santorini -->
+        <div class="hero-slide active" data-scene-slide="santorini">
+          <picture>
+            <source srcset="assets/img/hero-1-santorini-1920.webp 1920w, assets/img/hero-1-santorini-1280.webp 1280w, assets/img/hero-1-santorini-768.webp 768w" type="image/webp">
+            <img src="assets/img/hero-1-santorini-1280.jpg" alt="Santorini cliffside village overlooking the Aegean sea" class="hero-slide-img" width="1920" height="1080">
+          </picture>
+        </div>
+
+        <!-- Scene 2: Swiss Alps -->
+        <div class="hero-slide" data-scene-slide="alps">
+          <picture>
+            <source srcset="assets/img/hero-2-swiss-alps-1920.webp 1920w, assets/img/hero-2-swiss-alps-1280.webp 1280w, assets/img/hero-2-swiss-alps-768.webp 768w" type="image/webp">
+            <img src="assets/img/hero-2-swiss-alps-1280.jpg" alt="Snow-capped Swiss Alps mountain peaks" class="hero-slide-img" loading="lazy" width="1920" height="1080">
+          </picture>
+        </div>
+
+        <!-- Scene 3: Kyoto -->
+        <div class="hero-slide" data-scene-slide="kyoto">
+          <picture>
+            <source srcset="assets/img/hero-3-kyoto-1920.webp 1920w, assets/img/hero-3-kyoto-1280.webp 1280w, assets/img/hero-3-kyoto-768.webp 768w" type="image/webp">
+            <img src="assets/img/hero-3-kyoto-1280.jpg" alt="Kyoto historic wooden temple surrounded by cherry blossoms" class="hero-slide-img" loading="lazy" width="1920" height="1080">
+          </picture>
+        </div>
+
+        <!-- Scene 4: Bali -->
+        <div class="hero-slide" data-scene-slide="bali">
+          <picture>
+            <source srcset="assets/img/hero-4-bali-1920.webp 1920w, assets/img/hero-4-bali-1280.webp 1280w, assets/img/hero-4-bali-768.webp 768w" type="image/webp">
+            <img src="assets/img/hero-4-bali-1280.jpg" alt="Ubud Bali lush tropical palm forests and rice terraces" class="hero-slide-img" loading="lazy" width="1920" height="1080">
+          </picture>
+        </div>
+
+        <!-- Scene 5: Maldives -->
+        <div class="hero-slide" data-scene-slide="maldives">
+          <picture>
+            <source srcset="assets/img/hero-5-maldives-1920.webp 1920w, assets/img/hero-5-maldives-1280.webp 1280w, assets/img/hero-5-maldives-768.webp 768w" type="image/webp">
+            <img src="assets/img/hero-5-maldives-1280.jpg" alt="Turquoise lagoon waters of Maldives atoll" class="hero-slide-img" loading="lazy" width="1920" height="1080">
+          </picture>
+        </div>
+
+        <!-- Scene 6: Florence -->
+        <div class="hero-slide" data-scene-slide="florence">
+          <picture>
+            <source srcset="assets/img/hero-7-florence-1920.webp 1920w, assets/img/hero-7-florence-1280.webp 1280w, assets/img/hero-7-florence-768.webp 768w" type="image/webp">
+            <img src="assets/img/hero-7-florence-1280.jpg" alt="Golden sunset overlooking Florence cathedral and rooftops" class="hero-slide-img" loading="lazy" width="1920" height="1080">
+          </picture>
+        </div>
+      </div>
+
+      <!-- Scrim Contrast Gradient -->
+      <div class="hero-scrim-layer" aria-hidden="true"></div>
+
+      <!-- Layer 1: Scene-Specific Atmospheres -->
+      <div class="scene-atmosphere-wrapper" aria-hidden="true">
+        <!-- Santorini Atmosphere -->
+        <div class="scene-atmosphere active" data-scene="santorini">
+          <div class="santorini-sea-shimmer"></div>
+          <svg class="gliding-gull" width="32" height="14" viewBox="0 0 32 14" fill="rgba(255,255,255,0.7)">
+            <path d="M0 12C6 7 11 0 16 7C21 0 26 7 32 12C26 8 21 6 16 11C11 6 6 8 0 12Z"/>
+          </svg>
+        </div>
+
+        <!-- Swiss Alps Atmosphere -->
+        <div class="scene-atmosphere" data-scene="alps">
+          <div class="alps-aurora"></div>
+        </div>
+
+        <!-- Kyoto Atmosphere -->
+        <div class="scene-atmosphere" data-scene="kyoto">
+          <div class="kyoto-lantern"></div>
+        </div>
+
+        <!-- Bali Atmosphere -->
+        <div class="scene-atmosphere" data-scene="bali">
+          <svg class="palm-silhouette-left" viewBox="0 0 100 100" fill="#080c14">
+            <path d="M0 0 C30 20 60 50 80 100 C60 90 30 60 0 0 Z M20 10 C45 35 70 65 95 95 C75 80 40 50 20 10 Z"/>
+          </svg>
+          <svg class="palm-silhouette-right" viewBox="0 0 100 100" fill="#080c14">
+            <path d="M100 0 C70 20 40 50 20 100 C40 90 70 60 100 0 Z"/>
+          </svg>
+        </div>
+
+        <!-- Maldives Atmosphere -->
+        <div class="scene-atmosphere" data-scene="maldives">
+          <svg class="maldives-wave-svg" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <path d="M0 40 Q300 0 600 40 T1200 40 L1200 120 L0 120 Z"/>
+          </svg>
+        </div>
+
+        <!-- Florence Sunset Atmosphere -->
+        <div class="scene-atmosphere" data-scene="florence">
+          <svg class="sunset-cloud" width="280" height="90" viewBox="0 0 280 90" fill="rgba(251, 146, 60, 0.25)">
+            <ellipse cx="90" cy="50" rx="70" ry="35"/>
+            <ellipse cx="170" cy="45" rx="85" ry="40"/>
+            <ellipse cx="230" cy="55" rx="45" ry="25"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Layer 3: Global Ambient Plane with Dotted Trail -->
+      <div class="hero-ambient-plane" aria-hidden="true">
+        <svg width="60" height="30" viewBox="0 0 60 30" fill="none">
+          <path d="M50 15L35 7V13H15L10 9H5L8 15L5 21H10L15 17H35V23L50 15Z" fill="rgba(255,255,255,0.75)"/>
+          <line x1="0" y1="15" x2="40" y2="15" stroke="rgba(255,255,255,0.3)" stroke-dasharray="3 3"/>
+        </svg>
+      </div>
+
+      <!-- Night Stars -->
+      <div class="hero-night-stars" aria-hidden="true"></div>
+
+      <!-- Foreground Depth Parallax -->
+      <div class="hero-foreground-depth" aria-hidden="true"></div>
+
+      <!-- Layer 5: Hero Content & Mini-Planner -->
+      <div class="hero-content-layer">
+        <div class="hero-now-showing-badge">
+          <span class="now-showing-indicator"></span>
+          <span id="hero-now-showing-text">Now showing: Santorini, Greece</span>
+        </div>
+
+        <h1 class="hero-main-title">Autonomous Journey Design<br>Powered by Specialist AI</h1>
+        <p class="hero-lead-text">Watch parallel agent pipelines resolve real weather models, verified geocoding, and transparent budgets in seconds.</p>
+
+        <!-- Mini-Planner Form (Plain GET form -> opens /plan/) -->
+        <form action="/plan/" method="GET" class="hero-mini-planner">
+          <div class="mini-input-group">
+            <span class="mini-input-label">Destination</span>
+            <input type="text" name="dest" class="mini-input-field" placeholder="e.g., Kyoto, Japan" maxlength="80">
+          </div>
+
+          <div class="mini-input-group">
+            <span class="mini-input-label">Departure</span>
+            <input type="date" name="start" class="mini-input-field" aria-label="Departure date">
+          </div>
+
+          <div class="mini-input-group">
+            <span class="mini-input-label">Return</span>
+            <input type="date" name="end" class="mini-input-field" aria-label="Return date">
+          </div>
+
+          <button type="submit" class="btn btn-primary">Plan my journey ➔</button>
+        </form>
+
+        <!-- Factual Trust Strip -->
+        <div class="hero-trust-strip">
+          <div class="trust-item"><span class="trust-icon">⚡</span> 10 Specialist AI Agents</div>
+          <div class="trust-item"><span class="trust-icon">⛅</span> Live Open-Meteo Weather</div>
+          <div class="trust-item"><span class="trust-icon">📍</span> Verified OpenStreetMap Places</div>
+          <div class="trust-item"><span class="trust-icon">💰</span> Transparent Estimates</div>
+        </div>
+      </div>
+
+      <!-- Hero Bottom Navigation Dots & Atmosphere Controls -->
+      <div class="hero-controls-bar">
+        <div class="hero-scene-dots" role="tablist" aria-label="Hero Scene Selection">
+          <button type="button" class="hero-dot-btn active" role="tab" aria-selected="true" data-scene-btn="0">Santorini</button>
+          <button type="button" class="hero-dot-btn" role="tab" aria-selected="false" data-scene-btn="1">Swiss Alps</button>
+          <button type="button" class="hero-dot-btn" role="tab" aria-selected="false" data-scene-btn="2">Kyoto</button>
+          <button type="button" class="hero-dot-btn" role="tab" aria-selected="false" data-scene-btn="3">Bali</button>
+          <button type="button" class="hero-dot-btn" role="tab" aria-selected="false" data-scene-btn="4">Maldives</button>
+          <button type="button" class="hero-dot-btn" role="tab" aria-selected="false" data-scene-btn="5">Florence</button>
+        </div>
+
+        <div class="hero-utility-controls">
+          <button type="button" id="hero-pause-btn" class="hero-icon-btn" aria-label="Pause atmospheric slideshow" title="Pause / Resume motion">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"/>
+              <rect x="14" y="4" width="4" height="16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         2. SECTION: Your Itinerary and Map in One View (Sticky Split View)
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="split-itinerary-section" id="itinerary-preview-section" aria-labelledby="split-sec-title">
+      <div class="container">
+        <div style="text-align: center; max-width: 680px; margin: 0 auto var(--space-2xl);">
+          <span class="badge badge-accent" style="margin-bottom: var(--space-xs);">Interactive Architecture</span>
+          <h2 id="split-sec-title" style="font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin-bottom: var(--space-xs);">Your Itinerary & Map in One Cohesive View</h2>
+          <p style="color: var(--color-text-secondary);">Scroll through authentic daily pacing. The map smoothly synchronizes to reveal each neighborhood's highlights.</p>
+          <div style="font-size: 11px; color: var(--color-accent-light); margin-top: 6px;">Example plan generated by this system on October 15, 2026</div>
+        </div>
+
+        <div class="split-itinerary-grid">
+          <!-- Left: Sample Itinerary Day Cards -->
+          <div class="split-itinerary-days">
+            <div class="preview-day-card active" data-day="1">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="day-badge">Day 1</span>
+                <span style="font-size: 12px; color: #94a3b8;">Central Kyoto & Gion</span>
+              </div>
+              <h4 style="font-size: 16px; margin-bottom: 6px; color: #ffffff;">Arrival & Fushimi Inari Torii Gates</h4>
+              <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin: 0;">Morning arrival, walk through thousands of vermilion torii gates, followed by evening kaiseki dining along the Shirakawa canal.</p>
+            </div>
+
+            <div class="preview-day-card" data-day="2">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="day-badge">Day 2</span>
+                <span style="font-size: 12px; color: #94a3b8;">Northern Zen Foothills</span>
+              </div>
+              <h4 style="font-size: 16px; margin-bottom: 6px; color: #ffffff;">Kinkaku-ji & Ryoan-ji Rock Gardens</h4>
+              <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin: 0;">Explore the golden pavilion reflecting in Mirror Pond, followed by quiet contemplation at Japan's most famous dry landscape garden.</p>
+            </div>
+
+            <div class="preview-day-card" data-day="3">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="day-badge">Day 3</span>
+                <span style="font-size: 12px; color: #94a3b8;">Western Bamboo Forest</span>
+              </div>
+              <h4 style="font-size: 16px; margin-bottom: 6px; color: #ffffff;">Arashiyama Grove & Sagano Romantic Train</h4>
+              <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin: 0;">Towering bamboo stalks singing in the morning breeze, crossing Togetsukyo Bridge, and artisanal matcha tastings.</p>
+            </div>
+
+            <div class="preview-day-card" data-day="4">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="day-badge">Day 4</span>
+                <span style="font-size: 12px; color: #94a3b8;">Higashiyama Heritage</span>
+              </div>
+              <h4 style="font-size: 16px; margin-bottom: 6px; color: #ffffff;">Kiyomizu-dera & Traditional Teahouses</h4>
+              <p style="font-size: 13px; color: #cbd5e1; line-height: 1.5; margin: 0;">Dramatic wooden veranda overlooking cherry trees, strolling preserved stone lanes of Ninenzaka and Sannenzaka.</p>
+            </div>
+
+            <div style="margin-top: var(--space-xl);">
+              <a href="/plan/" class="btn btn-primary">Plan your expedition ➔</a>
+            </div>
+          </div>
+
+          <!-- Right: Sticky Real Leaflet Map -->
+          <div class="split-map-sticky-wrap" aria-label="Interactive Leaflet Geospatial Overview">
+            <div id="preview-sample-map"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         3. SECTION: Watch the Agents Plan (Simulation Preview)
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="simulation-section" id="simulation-section" aria-labelledby="sim-title">
+      <div class="container">
+        <div class="simulation-card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: var(--space-md);">
+            <div>
+              <span class="sim-preview-badge">Simulation Preview</span>
+              <h2 id="sim-title" style="font-size: clamp(1.8rem, 3.2vw, 2.4rem); margin-bottom: var(--space-xs);">Watch the Multi-Agent Pipeline</h2>
+              <p style="color: var(--color-text-secondary); max-width: 600px;">
+                Preview. Your real plan runs the same way with live data across ten concurrent specialists.
+              </p>
+            </div>
+            <button type="button" id="sim-pause-btn" class="btn btn-outline btn-sm">⏸ Pause Preview</button>
+          </div>
+
+          <div class="sim-stations-grid">
+            <div class="sim-station-box active" data-sim="0">
+              <div class="sim-station-header">
+                <span style="font-weight: 700; color: #ffffff; font-size: 14px;">1. Geospatial</span>
+                <span class="sim-stamp">VERIFIED</span>
+              </div>
+              <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0;">Resolves coordinates, administrative borders, and airports.</p>
+            </div>
+
+            <div class="sim-station-box" data-sim="1">
+              <div class="sim-station-header">
+                <span style="font-weight: 700; color: #ffffff; font-size: 14px;">2. Climate</span>
+                <span class="sim-stamp">FETCHED</span>
+              </div>
+              <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0;">Samples 16-day Open-Meteo forecasts and seasonal indices.</p>
+            </div>
+
+            <div class="sim-station-box" data-sim="2">
+              <div class="sim-station-header">
+                <span style="font-weight: 700; color: #ffffff; font-size: 14px;">3. Curatorial</span>
+                <span class="sim-stamp">MATCHED</span>
+              </div>
+              <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0;">Overpass API query filters real heritage and nature spots.</p>
+            </div>
+
+            <div class="sim-station-box" data-sim="3">
+              <div class="sim-station-header">
+                <span style="font-weight: 700; color: #ffffff; font-size: 14px;">4. Culinary</span>
+                <span class="sim-stamp">CURATED</span>
+              </div>
+              <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0;">Selects neighborhood dining matching dietary preferences.</p>
+            </div>
+
+            <div class="sim-station-box" data-sim="4">
+              <div class="sim-station-header">
+                <span style="font-weight: 700; color: #ffffff; font-size: 14px;">5. Synthesis</span>
+                <span class="sim-stamp">OPTIMIZED</span>
+              </div>
+              <p style="font-size: 12px; color: var(--color-text-secondary); margin: 0;">Synthesizes morning, afternoon, and evening pacing blocks.</p>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--color-border-subtle); padding-top: var(--space-md); flex-wrap: wrap; gap: var(--space-md);">
+            <span style="font-size: 12px; color: #94a3b8;">Average full expedition synthesis executes in ~30–45 seconds.</span>
+            <a href="/plan/" class="btn btn-primary btn-sm">Try it for real ➔</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         4. SECTION: Destination Mood Explorer (Interactive)
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="mood-explorer-section" id="mood-explorer-section" aria-labelledby="mood-sec-title">
+      <div class="container">
+        <div style="text-align: center; max-width: 680px; margin: 0 auto var(--space-xl);">
+          <span class="badge badge-accent">Explore by Atmosphere</span>
+          <h2 id="mood-sec-title" style="font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin-bottom: var(--space-xs);">Destination Mood Explorer</h2>
+          <p style="color: var(--color-text-secondary);">Select a mood to preview verified seasonal recommendations and signature experiences.</p>
+
+          <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; margin-top: var(--space-md);">
+            <button type="button" class="chip mood-chip active" data-mood="kyoto">⛩️ Kyoto</button>
+            <button type="button" class="chip mood-chip" data-mood="alps">⛰️ Swiss Alps</button>
+            <button type="button" class="chip mood-chip" data-mood="santorini">🏖️ Santorini</button>
+            <button type="button" class="chip mood-chip" data-mood="bali">🌴 Bali</button>
+            <button type="button" class="chip mood-chip" data-mood="florence">🏛️ Florence</button>
+          </div>
+        </div>
+
+        <div class="mood-card-hero">
+          <img id="mood-card-img" src="assets/img/hero-3-kyoto-1280.webp" alt="Destination mood preview" class="mood-card-bg">
+          <div class="mood-card-scrim"></div>
+
+          <div class="mood-content">
+            <h3 id="mood-title" style="font-size: clamp(1.6rem, 2.5vw, 2.2rem); margin-bottom: 6px; color: #ffffff;">Kyoto, Japan</h3>
+            <p id="mood-desc" style="font-size: 14px; color: #e2e8f0; line-height: 1.5; margin: 0;">Ancient zen temples, quiet stone paths, and seasonal cherry blossom canopies.</p>
+
+            <div class="mood-facts-grid">
+              <div class="mood-fact-item">
+                <div class="mood-fact-label">Best Months</div>
+                <div id="mood-best" class="mood-fact-val">Mar – May</div>
+              </div>
+              <div class="mood-fact-item">
+                <div class="mood-fact-label">Typical Vibe</div>
+                <div id="mood-vibe" class="mood-fact-val">Serene & Cultural</div>
+              </div>
+              <div class="mood-fact-item">
+                <div class="mood-fact-label">Signature Moment</div>
+                <div id="mood-exp" class="mood-fact-val">Fushimi Inari dawn hike</div>
+              </div>
+            </div>
+
+            <a href="/plan/?dest=Kyoto%2C%20Japan" id="mood-plan-btn" class="btn btn-primary btn-sm">Plan Kyoto ➔</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         5. SECTION: Sample-Plan Previews (Interactive Tokens)
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="section-wrapper" aria-labelledby="previews-title">
+      <div class="container">
+        <div style="text-align: center; max-width: 680px; margin: 0 auto;">
+          <span class="badge badge-accent">Rich Deliverables</span>
+          <h2 id="previews-title" style="font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin-bottom: var(--space-xs);">Every Detail Accounted For</h2>
+          <p style="color: var(--color-text-secondary);">Real example outputs generated by the agent architecture.</p>
+        </div>
+
+        <div class="previews-grid-4">
+          <!-- Budget Breakdown Doughnut Preview -->
+          <div class="preview-interactive-card">
+            <h4 style="margin-bottom: var(--space-md); color: #ffffff; font-size: 16px;">Budget Allocation Model</h4>
+            <div style="display: flex; align-items: center; justify-content: center; height: 160px; margin-bottom: var(--space-md);">
+              <svg width="150" height="150" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="38" fill="transparent" stroke="#1e293b" stroke-width="14"/>
+                <circle cx="50" cy="50" r="38" fill="transparent" stroke="#8e24aa" stroke-width="14" stroke-dasharray="115 238" stroke-dashoffset="0"/>
+                <circle cx="50" cy="50" r="38" fill="transparent" stroke="#ea4335" stroke-width="14" stroke-dasharray="67 238" stroke-dashoffset="-115"/>
+                <circle cx="50" cy="50" r="38" fill="transparent" stroke="#1a73e8" stroke-width="14" stroke-dasharray="38 238" stroke-dashoffset="-182"/>
+                <circle cx="50" cy="50" r="38" fill="transparent" stroke="#10b981" stroke-width="14" stroke-dasharray="19 238" stroke-dashoffset="-220"/>
+              </svg>
+            </div>
+            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #94a3b8;">
+              <div style="display: flex; justify-content: space-between;"><span style="color: #c084fc;">■ Stays (48%)</span><strong>$1,200</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #f87171;">■ Dining (28%)</span><strong>$700</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #38bdf8;">■ Transit (16%)</span><strong>$400</strong></div>
+              <div style="display: flex; justify-content: space-between;"><span style="color: #34d399;">■ Activities (8%)</span><strong>$200</strong></div>
+            </div>
+          </div>
+
+          <!-- Weather Strip Preview -->
+          <div class="preview-interactive-card">
+            <h4 style="margin-bottom: var(--space-md); color: #ffffff; font-size: 16px;">16-Day Weather Strip</h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
+                <span style="font-weight: 700; font-size: 13px;">Oct 15</span>
+                <span>☀️ 21°C / 14°C</span>
+                <span style="font-size: 11px; color: #38bdf8;">0% Rain</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
+                <span style="font-weight: 700; font-size: 13px;">Oct 16</span>
+                <span>⛅ 19°C / 12°C</span>
+                <span style="font-size: 11px; color: #38bdf8;">10% Rain</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
+                <span style="font-weight: 700; font-size: 13px;">Oct 17</span>
+                <span>🌧️ 17°C / 11°C</span>
+                <span style="font-size: 11px; color: #f59e0b;">60% Rain</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
+                <span style="font-weight: 700; font-size: 13px;">Oct 18</span>
+                <span>☀️ 20°C / 13°C</span>
+                <span style="font-size: 11px; color: #38bdf8;">5% Rain</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Interactive Packing Checklist -->
+          <div class="preview-interactive-card">
+            <h4 style="margin-bottom: var(--space-md); color: #ffffff; font-size: 16px;">Climate-Tailored Packing</h4>
+            <p style="font-size: 11px; color: #94a3b8; margin-bottom: 8px;">Click to toggle items:</p>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label class="preview-packing-item" style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" checked> Lightweight waterproof shell
+              </label>
+              <label class="preview-packing-item" style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox" checked> Slip-on shoes for temple verandas
+              </label>
+              <label class="preview-packing-item" style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox"> Universal power adapter (Type A)
+              </label>
+              <label class="preview-packing-item" style="display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer;">
+                <input type="checkbox"> Coin purse for street market vending
+              </label>
+            </div>
+          </div>
+
+          <!-- Boarding Pass Ticket -->
+          <div class="boarding-pass-card">
+            <div class="boarding-pass-notch-left"></div>
+            <div class="boarding-pass-notch-right"></div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+              <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: var(--color-accent-gold);">Boarding Pass</span>
+              <span style="font-size: 11px; color: #94a3b8;">GATE 08</span>
+            </div>
+            <div style="font-size: 20px; font-weight: 800; color: #ffffff; margin-bottom: 4px;">SFO ➔ KIX</div>
+            <div style="font-size: 12px; color: #cbd5e1; margin-bottom: 16px;">Flight & Rail Booking Links Ready</div>
+            <div style="border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 12px; font-size: 11px; color: #94a3b8;">
+              Direct integration with Google Flights, Booking.com, and local rail networks.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         6. SECTION: Features Bento Grid ("Everything in One Plan")
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="section-wrapper" id="features-section" aria-labelledby="features-title">
+      <div class="container">
+        <div style="text-align: center; max-width: 680px; margin: 0 auto;">
+          <span class="badge badge-accent">Proven Architecture</span>
+          <h2 id="features-title" style="font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin-bottom: var(--space-xs);">Everything In One Connected Plan</h2>
+          <p style="color: var(--color-text-secondary);">Real capabilities engineered for genuine travelers. Zero fabricated claims.</p>
+        </div>
+
+        <div class="bento-grid-6">
+          <div class="bento-card bento-card-span-2">
+            <span style="font-size: 28px; display: inline-block; margin-bottom: 12px;">⚡</span>
+            <h3 style="font-size: 20px; color: #ffffff; margin-bottom: 6px;">Parallel Multi-Agent Architecture</h3>
+            <p style="color: var(--color-text-secondary); font-size: 14px; line-height: 1.5; margin: 0;">
+              Rather than a single monolithic prompt, Aetheria dispatches ten specialized agents concurrently—each dedicated to geocoding, meteorological forecasts, budget mathematics, or dining curation.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <span style="font-size: 28px; display: inline-block; margin-bottom: 12px;">🗺️</span>
+            <h3 style="font-size: 18px; color: #ffffff; margin-bottom: 6px;">Google Maps-Style Interface</h3>
+            <p style="color: var(--color-text-secondary); font-size: 13px; line-height: 1.5; margin: 0;">
+              Vendored Leaflet map with crisp Esri vector roads, satellite imagery, SVG teardrop pins, and direct links to Google Maps.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <span style="font-size: 28px; display: inline-block; margin-bottom: 12px;">⛅</span>
+            <h3 style="font-size: 18px; color: #ffffff; margin-bottom: 6px;">Live Open-Meteo Integration</h3>
+            <p style="color: var(--color-text-secondary); font-size: 13px; line-height: 1.5; margin: 0;">
+              True 16-day daily forecasts calculating precipitation probability, temperature ranges, and weather codes to adapt day schedules.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <span style="font-size: 28px; display: inline-block; margin-bottom: 12px;">💰</span>
+            <h3 style="font-size: 18px; color: #ffffff; margin-bottom: 6px;">Transparent Budget Split</h3>
+            <p style="color: var(--color-text-secondary); font-size: 13px; line-height: 1.5; margin: 0;">
+              Mathematical proportion allocation across accommodations, food, transit, and contingency buffers with clear estimates.
+            </p>
+          </div>
+
+          <div class="bento-card">
+            <span style="font-size: 28px; display: inline-block; margin-bottom: 12px;">📅</span>
+            <h3 style="font-size: 18px; color: #ffffff; margin-bottom: 6px;">Instant Share & Calendar Export</h3>
+            <p style="color: var(--color-text-secondary); font-size: 13px; line-height: 1.5; margin: 0;">
+              Export full itineraries to RFC 5545 `.ics` calendars (Apple, Google, Outlook) and generate permanent private share links.
+            </p>
+          </div>
+        </div>
+
+        <div style="text-align: center; margin-top: var(--space-2xl);">
+          <a href="/plan/" class="btn btn-primary btn-lg">Start planning your journey ➔</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         7. SECTION: Destinations Showcase
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="section-wrapper" id="destinations-section" aria-labelledby="dest-sec-title">
+      <div class="container">
+        <div style="text-align: center; max-width: 680px; margin: 0 auto var(--space-2xl);">
+          <span class="badge badge-accent">Curated Inspiration</span>
+          <h2 id="dest-sec-title" style="font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin-bottom: var(--space-xs);">Signature Expeditions</h2>
+          <p style="color: var(--color-text-secondary);">Verified destinations with rich historical sites, alpine vistas, and cultural landmarks.</p>
+        </div>
+
+        <div class="cards-grid-4">
+          <div class="dest-card">
+            <div class="dest-card-image-wrap">
+              <picture>
+                <source srcset="assets/img/dest-tokyo-1280.webp 1280w, assets/img/dest-tokyo-768.webp 768w" type="image/webp">
+                <img src="assets/img/dest-tokyo-1280.jpg" alt="Tokyo neon night skyline" class="dest-card-img" loading="lazy" width="600" height="400">
+              </picture>
+            </div>
+            <div class="dest-card-content">
+              <span class="dest-card-tag">East Asia</span>
+              <h3 class="dest-card-title">Tokyo, Japan</h3>
+              <p class="dest-card-desc">Futuristic skyscrapers juxtaposed with historic temples, world-class cuisine, and tranquil neon alleys.</p>
+              <div class="dest-card-footer">
+                <span class="dest-card-timing">Best: Mar–May & Oct–Nov</span>
+                <a href="/plan/?dest=Tokyo%2C%20Japan" class="btn btn-secondary btn-sm">Explore Tokyo</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="dest-card">
+            <div class="dest-card-image-wrap">
+              <picture>
+                <source srcset="assets/img/dest-amalfi-1280.webp 1280w, assets/img/dest-amalfi-768.webp 768w" type="image/webp">
+                <img src="assets/img/dest-amalfi-1280.jpg" alt="Amalfi Coast colorful cliffside village" class="dest-card-img" loading="lazy" width="600" height="400">
+              </picture>
+            </div>
+            <div class="dest-card-content">
+              <span class="dest-card-tag">Mediterranean</span>
+              <h3 class="dest-card-title">Amalfi Coast, Italy</h3>
+              <p class="dest-card-desc">Pastel villages perched dramatically over azure waters and sun-drenched lemon groves.</p>
+              <div class="dest-card-footer">
+                <span class="dest-card-timing">Best: May–Sep</span>
+                <a href="/plan/?dest=Amalfi%20Coast%2C%20Italy" class="btn btn-secondary btn-sm">Explore Amalfi</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="dest-card">
+            <div class="dest-card-image-wrap">
+              <picture>
+                <source srcset="assets/img/dest-banff-1280.webp 1280w, assets/img/dest-banff-768.webp 768w" type="image/webp">
+                <img src="assets/img/dest-banff-1280.jpg" alt="Banff turquoise glacial lake and mountains" class="dest-card-img" loading="lazy" width="600" height="400">
+              </picture>
+            </div>
+            <div class="dest-card-content">
+              <span class="dest-card-tag">North America</span>
+              <h3 class="dest-card-title">Banff National Park, Canada</h3>
+              <p class="dest-card-desc">Rugged Rocky Mountain peaks overlooking turquoise glacial lakes and untamed pine forests.</p>
+              <div class="dest-card-footer">
+                <span class="dest-card-timing">Best: Jun–Aug & Dec–Mar</span>
+                <a href="/plan/?dest=Banff%2C%20Canada" class="btn btn-secondary btn-sm">Explore Banff</a>
+              </div>
+            </div>
+          </div>
+
+          <div class="dest-card">
+            <div class="dest-card-image-wrap">
+              <picture>
+                <source srcset="assets/img/dest-paris-1280.webp 1280w, assets/img/dest-paris-768.webp 768w" type="image/webp">
+                <img src="assets/img/dest-paris-1280.jpg" alt="Parisian architectural boulevards and monuments" class="dest-card-img" loading="lazy" width="600" height="400">
+              </picture>
+            </div>
+            <div class="dest-card-content">
+              <span class="dest-card-tag">Western Europe</span>
+              <h3 class="dest-card-title">Paris, France</h3>
+              <p class="dest-card-desc">Haussmannian boulevards, iconic museums, and legendary boulangeries along the Seine.</p>
+              <div class="dest-card-footer">
+                <span class="dest-card-timing">Best: Apr–May & Sep–Oct</span>
+                <a href="/plan/?dest=Paris%2C%20France" class="btn btn-secondary btn-sm">Explore Paris</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         8. SECTION: How It Works
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="section-wrapper" id="how-it-works-section" aria-labelledby="hiw-title">
+      <div class="container">
+        <div style="text-align: center; max-width: 680px; margin: 0 auto var(--space-2xl);">
+          <span class="badge badge-accent">Architectural Flow</span>
+          <h2 id="hiw-title" style="font-size: clamp(1.8rem, 3.2vw, 2.5rem); margin-bottom: var(--space-xs);">How Our Agents Collaborate</h2>
+          <p style="color: var(--color-text-secondary);">Unlike monolithic prompts, Aetheria orchestrates an ensemble of autonomous specialist agents.</p>
+        </div>
+
+        <div class="hiw-steps-grid">
+          <div class="hiw-step-card">
+            <div class="step-num">01</div>
+            <h3>Preferences & Goals</h3>
+            <p>Your budget, travel dates, style, and culinary constraints are sanitized and bound to a formal planning state.</p>
+          </div>
+
+          <div class="hiw-step-card">
+            <div class="step-num">02</div>
+            <h3>Geospatial Research</h3>
+            <p>The destination agent resolves exact coordinates via Nominatim and analyzes seasonal climatic trends.</p>
+          </div>
+
+          <div class="hiw-step-card">
+            <div class="step-num">03</div>
+            <h3>Parallel Specialist Agents</h3>
+            <p>Ten workers run concurrently: fetching live Open-Meteo forecasts, querying Overpass places, and calculating budget splits.</p>
+          </div>
+
+          <div class="hiw-step-card">
+            <div class="step-num">04</div>
+            <h3>Itinerary Synthesis</h3>
+            <p>The itinerary agent weaves attractions, restaurants, and transit times into balanced morning, afternoon, and evening blocks.</p>
+          </div>
+
+          <div class="hiw-step-card">
+            <div class="step-num">05</div>
+            <h3>Refine & Export</h3>
+            <p>Review your interactive dashboard, consult the assistant, export to RFC 5545 calendar, or generate a PDF.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         9. SECTION: Real Proof ("Built With")
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="section-wrapper" style="border-top: 1px solid var(--color-border-subtle); background: rgba(15, 23, 42, 0.4);">
+      <div class="container" style="text-align: center;">
+        <span class="badge badge-accent" style="margin-bottom: 8px;">Engineering Integrity</span>
+        <h3 style="font-size: 20px; color: #ffffff; margin-bottom: var(--space-xs);">Built With Authentic Infrastructure</h3>
+        <p style="color: var(--color-text-secondary); font-size: 13px; max-width: 600px; margin: 0 auto var(--space-lg);">
+          FastAPI &bull; LangGraph &bull; Groq &bull; OpenStreetMap (ODbL) &bull; Open-Meteo &bull; Leaflet &bull; SQLite
+        </p>
+        <div id="stats-container" style="display: none; align-items: center; justify-content: center; gap: 8px; font-size: 13px; color: var(--color-accent-light);">
+          <span>📈</span>
+          <strong id="hero-stats-count">0 expeditions planned</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────────────────────
+         10. FINAL CTA
+         ────────────────────────────────────────────────────────────────────────── -->
+    <section class="section-wrapper" style="padding: var(--space-3xl) 0; text-align: center; position: relative;">
+      <div class="container" style="max-width: 700px; margin: 0 auto;">
+        <h2 style="font-size: clamp(2rem, 3.8vw, 3rem); font-family: var(--font-heading); margin-bottom: var(--space-sm); color: #ffffff;">Ready for Your Next Expedition?</h2>
+        <p style="color: var(--color-text-secondary); font-size: var(--font-size-base); margin-bottom: var(--space-xl);">
+          Enter your dates and destinations. Our parallel agents handle the pacing, research, and budget mathematics.
+        </p>
+        <a href="/plan/" class="btn btn-primary btn-lg">Plan my trip ➔</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-content">
+      <div class="footer-grid">
+        <div class="footer-col brand-col">
+          <div class="footer-logo">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+            </svg>
+            <span>Aetheria</span>
+          </div>
+          <p class="footer-tagline">Autonomous agentic travel intelligence for custom expeditions.</p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="#itinerary-preview-section">Itinerary & Map</a></li>
+            <li><a href="#simulation-section">Agents in Action</a></li>
+            <li><a href="#destinations-section">Destinations</a></li>
+            <li><a href="/plan/">Planner</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Data & Credits</h4>
+          <ul>
+            <li><a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap (ODbL)</a></li>
+            <li><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Open-Meteo Weather</a></li>
+            <li><a href="assets/CREDITS.md" target="_blank" rel="noopener noreferrer">Photography Credits</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Project Code</h4>
+          <ul>
+            <li><a href="https://github.com/rajadityaaa/Travel-Planner-Agent.git" target="_blank" rel="noopener noreferrer">GitHub Repository ↗</a></li>
+            <li><a href="/docs" target="_blank" rel="noopener noreferrer">FastAPI Swagger Docs ↗</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="student-disclaimer">
+          <strong>Academic & Portfolio Notice:</strong> Aetheria is a student research and engineering project demonstrating multi-agent workflows. No direct bookings or transactions are executed through this application; prices and room rates are estimates.
+        </div>
+        <div>
+          &copy; 2026 Aetheria Travel Planner Agent. MIT License.
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts: Vendored Leaflet (deferred) & Landing Orchestrator -->
+  <script src="vendor/leaflet/leaflet.js?v=2" defer></script>
+  <script type="module" src="js/landing.js"></script>
+</body>
+</html>

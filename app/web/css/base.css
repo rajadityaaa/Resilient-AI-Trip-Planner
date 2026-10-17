@@ -1,0 +1,199 @@
+/**
+ * base.css - Font Declarations, Modern Reset, and Base Elements
+ */
+
+/* ── Self-Hosted Fonts ── */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/manrope-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/manrope-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/manrope-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/plus-jakarta-sans-700.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Plus Jakarta Sans';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../assets/fonts/plus-jakarta-sans-800.woff2') format('woff2');
+}
+
+/* ── Modern CSS Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  min-height: 100vh;
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-normal);
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* ── Skip to Main Content Link (Accessibility) ── */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: var(--space-md);
+  background: var(--color-accent);
+  color: var(--color-text-inverse);
+  padding: var(--space-xs) var(--space-md);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+  z-index: var(--z-toast);
+  transition: top var(--transition-fast);
+  text-decoration: none;
+}
+
+.skip-link:focus {
+  top: var(--space-md);
+  outline: 3px solid #fff;
+}
+
+/* ── Focus Rings ── */
+:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 3px;
+}
+
+/* ── Typography Elements ── */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-family-display);
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: var(--font-size-4xl); font-weight: var(--font-weight-extrabold); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+
+p {
+  color: var(--color-text-secondary);
+  margin-bottom: var(--space-md);
+}
+
+p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-accent-light);
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+}
+
+img, picture, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ── Utility Classes ── */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--color-text-primary) 30%, var(--color-accent-light) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-accent {
+  color: var(--color-accent);
+}
+
+.text-muted {
+  color: var(--color-text-muted);
+}
+
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+
+.text-xs {
+  font-size: var(--font-size-xs);
+}
+
+/* ── Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

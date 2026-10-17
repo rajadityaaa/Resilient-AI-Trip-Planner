@@ -3,7 +3,9 @@ Chat Tab UI component.
 Implements an interactive conversational assistant with full trip result context.
 """
 import json
+
 import streamlit as st
+
 from app.agents.state import TripState
 from app.llm.factory import get_llm
 

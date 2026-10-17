@@ -2,8 +2,9 @@
 Transport Agent: Generates transit, rideshare, walkability, and airport transfer guidance.
 """
 import json
+
 from app.agents.state import TripState
-from app.llm.factory import get_llm, clean_json_response
+from app.llm.factory import clean_json_response, get_llm
 from app.llm.prompts.transport_prompt import build_transport_prompt
 
 

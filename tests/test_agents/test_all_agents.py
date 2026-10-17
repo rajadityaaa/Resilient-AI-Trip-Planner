@@ -2,20 +2,24 @@
 Unit tests for all 9 reasoning agents in app.agents.
 Tests each agent standalone using asyncio.
 """
-import unittest
 import asyncio
-from app.agents.state import TripState
-from app.agents.destination_agent import suggest_destinations
-from app.agents.weather_agent import get_weather
+import unittest
+
+import pytest
+
 from app.agents.attraction_agent import get_attractions_for_trip
-from app.agents.restaurant_agent import get_restaurants_for_trip
-from app.agents.hotel_agent import get_hotels
 from app.agents.budget_agent import build_budget
-from app.agents.transport_agent import build_transport_guide
-from app.agents.packing_agent import build_packing_list
 from app.agents.currency_agent import build_currency_info
+from app.agents.destination_agent import suggest_destinations
+from app.agents.hotel_agent import get_hotels
+from app.agents.packing_agent import build_packing_list
+from app.agents.restaurant_agent import get_restaurants_for_trip
+from app.agents.state import TripState
+from app.agents.transport_agent import build_transport_guide
+from app.agents.weather_agent import get_weather
 
 
+@pytest.mark.network
 class TestAllAgents(unittest.TestCase):
 
     def setUp(self):

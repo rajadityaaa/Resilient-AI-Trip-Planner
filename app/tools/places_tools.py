@@ -1,11 +1,20 @@
 """
-Places Tools: Overpass API wrapper for fetching attractions and restaurants with retry and TTL caching.
+Places Tools: Overpass API wrapper for fetching attractions and restaurants with retry,
+circuit breaker integration, and TTL + negative caching.
 """
-import time
+from __future__ import annotations
+
 import logging
-import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
+
+import requests
+
+from app.providers.circuit_breaker import (
+    is_circuit_open,
+    record_failure,
+    record_success,
+)
 from app.tools.cache import cache_get, cache_set
 
 logger = logging.getLogger(__name__)
@@ -30,24 +39,34 @@ def _post_one(target: str, query: str, timeout: float) -> Optional[dict]:
     return None
 
 
-def _fetch_overpass_with_retry(query: str, attempts: int = 1, url: str = OVERPASS_URL, timeout: float = 16) -> Optional[dict]:
+def _fetch_overpass_with_retry(
+    query: str, attempts: int = 1, url: str = OVERPASS_URL, timeout: float = 6
+) -> Optional[dict]:
     """
     Race ALL Overpass mirrors at the same time; the first valid answer wins.
-    A slow/overloaded public server no longer blocks us - total wait is at most `timeout` seconds.
-    (`attempts`/`url` kept for backward compatibility.)
+    If the circuit breaker for 'overpass' is OPEN, skips mirrors immediately.
+    If all mirrors fail, trips the circuit breaker for 5 minutes.
     """
+    if is_circuit_open("overpass"):
+        logger.info("[Overpass Tool] Circuit breaker is OPEN. Skipping Overpass mirrors.")
+        return None
+
     pool = ThreadPoolExecutor(max_workers=len(OVERPASS_MIRRORS))
     futures = [pool.submit(_post_one, m, query, timeout) for m in OVERPASS_MIRRORS]
     try:
-        for fut in as_completed(futures, timeout=timeout + 2):
+        for fut in as_completed(futures, timeout=timeout + 1):
             res = fut.result()
             if res and "elements" in res:
+                record_success("overpass")
                 return res
     except Exception:
         pass
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
+
     logger.error("[Overpass Tool] All mirrors failed for query.")
+    # Trip circuit breaker for 5 minutes (300 seconds)
+    record_failure("overpass", force_trip=True, cooldown_s=300)
     return None
 
 
@@ -71,6 +90,7 @@ def _parse_elements(elements: list, limit: int, category_fn, cuisine_norm: Optio
             "lat": float(item_lat),
             "lon": float(item_lon),
             "tags": tags,
+            "source": "osm",
         })
         if len(results) >= limit:
             break
@@ -90,11 +110,7 @@ def _attraction_category(tags: dict) -> str:
 def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 15) -> list[dict]:
     """
     Fetch top attractions within radius_m of (lat, lon).
-
-    Two-tier strategy so big cities (London, Paris...) don't time out:
-      1. Notable places only (named + wikidata tag) - small, fast, and the places tourists actually want.
-      2. If that returns too few (small towns), fall back to a broader named-places query.
-    Output is capped server-side (`out center N`) so the response stays small.
+    Cached for 24h on success; empty results negatively cached for 10 min.
     """
     cache_key = f"attractions:{lat:.4f}:{lon:.4f}:{radius_m}:{limit}"
     cached = cache_get(cache_key)
@@ -103,7 +119,7 @@ def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 1
 
     around = f"(around:{radius_m},{lat},{lon})"
     notable = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:6];
     (
       nwr["tourism"~"^(attraction|museum|gallery|viewpoint|zoo|theme_park)$"]["name"]["wikidata"]{around};
       nwr["historic"]["name"]["wikidata"]{around};
@@ -112,7 +128,7 @@ def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 1
     out center 80;
     """
     broad = f"""
-    [out:json][timeout:15];
+    [out:json][timeout:6];
     (
       nwr["tourism"~"^(attraction|museum|gallery|viewpoint)$"]["name"]{around};
       nwr["historic"]["name"]{around};
@@ -126,7 +142,7 @@ def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 1
     if data and "elements" in data:
         results = _parse_elements(data["elements"], limit, _attraction_category)
 
-    if len(results) < 6:
+    if len(results) < 6 and not is_circuit_open("overpass"):
         data2 = _fetch_overpass_with_retry(broad, attempts=1)
         if data2 and "elements" in data2:
             extra = _parse_elements(data2["elements"], limit, _attraction_category)
@@ -136,6 +152,10 @@ def get_attractions(lat: float, lon: float, radius_m: int = 5000, limit: int = 1
 
     if results:
         cache_set(cache_key, results, ttl_seconds=86400)
+    else:
+        # Negative caching for 10 minutes (600 seconds)
+        cache_set(cache_key, [], ttl_seconds=600)
+
     return results
 
 
@@ -144,12 +164,11 @@ def get_restaurants(
     lon: float,
     radius_m: int = 3000,
     cuisine: Optional[str] = None,
-    limit: int = 15
+    limit: int = 15,
 ) -> list[dict]:
     """
     Fetch restaurants/cafes within radius_m of (lat, lon).
-    Prefers places that have a cuisine tag (higher quality data, smaller response);
-    falls back to any named restaurant if that returns too few. Output capped with `out center N`.
+    Cached for 24h on success; empty results negatively cached for 10 min.
     """
     cuisine_norm = cuisine.strip().lower() if cuisine else None
     cache_key = f"restaurants:{lat:.4f}:{lon:.4f}:{radius_m}:{cuisine_norm}:{limit}"
@@ -158,37 +177,40 @@ def get_restaurants(
         return cached
 
     around = f"(around:{radius_m},{lat},{lon})"
-    cuisine_filter = f'["cuisine"~"{cuisine_norm}",i]' if cuisine_norm else '["cuisine"]'
-    tier1 = f"""
-    [out:json][timeout:15];
+    notable = f"""
+    [out:json][timeout:6];
     (
-      nwr["amenity"~"^(restaurant|cafe)$"]["name"]{cuisine_filter}{around};
+      nwr["amenity"="restaurant"]["name"]["cuisine"]{around};
+      nwr["amenity"="cafe"]["name"]["cuisine"]{around};
+    );
+    out center 80;
+    """
+    broad = f"""
+    [out:json][timeout:6];
+    (
+      nwr["amenity"="restaurant"]["name"]{around};
+      nwr["amenity"="cafe"]["name"]{around};
     );
     out center 60;
     """
-    tier2 = f"""
-    [out:json][timeout:15];
-    (
-      nwr["amenity"~"^(restaurant|cafe|fast_food)$"]["name"]{around};
-    );
-    out center 40;
-    """
-    cat = lambda t: t.get("amenity", "restaurant").capitalize()
 
     results = []
-    data = _fetch_overpass_with_retry(tier1)
+    data = _fetch_overpass_with_retry(notable)
     if data and "elements" in data:
-        results = _parse_elements(data["elements"], limit, cat)
+        results = _parse_elements(data["elements"], limit, lambda tags: tags.get("cuisine", "Restaurant").capitalize(), cuisine_norm)
 
-    # Only broaden when the user did NOT ask for a specific cuisine (agent handles that fallback itself)
-    if len(results) < 6 and not cuisine_norm:
-        data2 = _fetch_overpass_with_retry(tier2, attempts=1)
+    if len(results) < 6 and not is_circuit_open("overpass"):
+        data2 = _fetch_overpass_with_retry(broad, attempts=1)
         if data2 and "elements" in data2:
-            extra = _parse_elements(data2["elements"], limit, cat)
+            extra = _parse_elements(data2["elements"], limit, lambda tags: tags.get("amenity", "Restaurant").capitalize(), None)
             have = {r["name"].lower() for r in results}
             results += [e for e in extra if e["name"].lower() not in have]
             results = results[:limit]
 
     if results:
         cache_set(cache_key, results, ttl_seconds=86400)
+    else:
+        # Negative caching for 10 minutes (600 seconds)
+        cache_set(cache_key, [], ttl_seconds=600)
+
     return results

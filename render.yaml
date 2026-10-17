@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: ai-travel-planner
+    runtime: docker
+    plan: free
+    region: singapore
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ENV
+        value: production
+      - key: RATE_LIMIT_PER_MIN
+        value: "10"
+      - key: DAILY_JOB_LIMIT
+        value: "100"
+      - key: TRUST_PROXY
+        value: "true"
+      - key: GROQ_API_KEY
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: FOURSQUARE_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
